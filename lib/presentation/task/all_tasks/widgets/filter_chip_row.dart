@@ -6,9 +6,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../all_tasks_viewmodel.dart';
 
 class FilterChipRow extends StatelessWidget {
-  final TaskFilterTab        activeFilter;
+  final TaskFilterTab             activeFilter;
   final ValueChanged<TaskFilterTab> onFilterChanged;
-  final int                  overdueCount;
+  final int                       overdueCount;
 
   const FilterChipRow({
     super.key,
@@ -19,6 +19,8 @@ class FilterChipRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary; // FIX
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(
@@ -26,7 +28,7 @@ class FilterChipRow extends StatelessWidget {
       ),
       child: Row(
         children: TaskFilterTab.values.map((filter) {
-          final isActive = activeFilter == filter;
+          final isActive  = activeFilter == filter;
           final isOverdue = filter == TaskFilterTab.overdue;
 
           return Padding(
@@ -40,22 +42,16 @@ class FilterChipRow extends StatelessWidget {
                   vertical:   AppDimensions.spaceSM,
                 ),
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.primary
-                      : AppColors.white,
-                  borderRadius: BorderRadius.circular(
-                    AppDimensions.radiusFull,
-                  ),
+                  color: isActive ? primary : AppColors.white,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
                   border: Border.all(
-                    color: isActive
-                        ? AppColors.primary
-                        : AppColors.grey300,
+                    color: isActive ? primary : AppColors.grey300,
                     width: 1,
                   ),
                   boxShadow: isActive
                       ? [
                     BoxShadow(
-                      color:      AppColors.primary.withOpacity(0.3),
+                      color:      primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset:     const Offset(0, 2),
                     ),
@@ -68,15 +64,11 @@ class FilterChipRow extends StatelessWidget {
                     Text(
                       _label(filter),
                       style: AppTextStyles.labelMedium.copyWith(
-                        color: isActive
-                            ? AppColors.white
-                            : AppColors.grey600,
-                        fontWeight: isActive
-                            ? FontWeight.w700
-                            : FontWeight.w500,
+                        color: isActive ? AppColors.white : AppColors.grey600,
+                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                       ),
                     ),
-                    // Badge đỏ cho overdue
+                    // Badge đỏ cho overdue (giữ đỏ vì đây là cảnh báo)
                     if (isOverdue && overdueCount > 0) ...[
                       const SizedBox(width: AppDimensions.spaceXS),
                       Container(
@@ -86,20 +78,16 @@ class FilterChipRow extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: isActive
-                              ? AppColors.white.withOpacity(0.3)
+                              ? AppColors.white.withValues(alpha: 0.3)
                               : AppColors.statusOverdue,
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusFull,
-                          ),
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
                         ),
                         child: Text(
                           '$overdueCount',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize:   10,
                             fontWeight: FontWeight.w700,
-                            color:      isActive
-                                ? AppColors.white
-                                : AppColors.white,
+                            color:      AppColors.white,
                           ),
                         ),
                       ),

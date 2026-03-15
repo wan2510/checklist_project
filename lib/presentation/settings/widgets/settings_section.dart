@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class SettingsSection extends StatelessWidget {
-  final String        title;
-  final List<Widget>  children;
+  final String       title;
+  final List<Widget> children;
 
   const SettingsSection({
     super.key,
@@ -16,6 +17,8 @@ class SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -28,7 +31,7 @@ class SettingsSection extends StatelessWidget {
           child: Text(
             title,
             style: AppTextStyles.titleSmall.copyWith(
-              color:         AppColors.grey500,
+              color:         isDark ? AppColors.grey400 : AppColors.grey500,
               letterSpacing: 0.8,
             ),
           ),
@@ -37,11 +40,14 @@ class SettingsSection extends StatelessWidget {
         // ── Items container ────────────────────────────────────
         Container(
           decoration: BoxDecoration(
-            color:        AppColors.white,
+            // FIX: dark mode → xám tối, light mode → trắng
+            color: context.cardColor,
             borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
             boxShadow: [
               BoxShadow(
-                color:      AppColors.grey300.withValues(alpha:0.3),
+                color:      isDark
+                    ? Colors.black26
+                    : AppColors.grey300.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset:     const Offset(0, 2),
               ),
@@ -57,10 +63,12 @@ class SettingsSection extends StatelessWidget {
                 children: [
                   child,
                   if (!isLast)
-                    const Divider(
-                      height:  1,
-                      indent:  AppDimensions.spaceLG + AppDimensions.iconXL,
+                    Divider(
+                      height:    1,
+                      indent:    AppDimensions.spaceLG + AppDimensions.iconXL,
                       endIndent: AppDimensions.spaceLG,
+                      // FIX: divider màu tối hơn trong dark mode
+                      color: context.dividerColor,
                     ),
                 ],
               );
@@ -72,16 +80,16 @@ class SettingsSection extends StatelessWidget {
   }
 }
 
-// ── Standard settings tile ────────────────────────────────────
+// ── Standard settings tile ────────────────────────────────────────
 class SettingsTile extends StatelessWidget {
-  final IconData  icon;
-  final Color     iconColor;
-  final Color     iconBgColor;
-  final String    title;
-  final String?   subtitle;
-  final Widget?   trailing;
+  final IconData      icon;
+  final Color         iconColor;
+  final Color         iconBgColor;
+  final String        title;
+  final String?       subtitle;
+  final Widget?       trailing;
   final VoidCallback? onTap;
-  final bool      isDanger;
+  final bool          isDanger;
 
   const SettingsTile({
     super.key,
@@ -113,15 +121,9 @@ class SettingsTile extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color:        iconBgColor,
-                borderRadius: BorderRadius.circular(
-                  AppDimensions.radiusSM,
-                ),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
               ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size:  AppDimensions.iconMD,
-              ),
+              child: Icon(icon, color: iconColor, size: AppDimensions.iconMD),
             ),
             const SizedBox(width: AppDimensions.spaceMD),
 
@@ -133,18 +135,17 @@ class SettingsTile extends StatelessWidget {
                   Text(
                     title,
                     style: AppTextStyles.titleMedium.copyWith(
+                      // FIX: dark mode chữ trắng, danger vẫn đỏ
                       color: isDanger
                           ? AppColors.statusOverdue
-                          : AppColors.textPrimaryLight,
+                          : context.textPrimary,
                     ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle!,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.grey500,
-                      ),
+                      style: AppTextStyles.bodySmall,
                     ),
                   ],
                 ],
@@ -152,11 +153,13 @@ class SettingsTile extends StatelessWidget {
             ),
 
             // ── Trailing ──────────────────────────────────────
-            if (trailing != null) trailing!
+            if (trailing != null)
+              trailing!
             else if (onTap != null)
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.grey400,
+                // FIX: dark mode chevron sáng hơn
+                color: context.isDark ? AppColors.grey500 : AppColors.grey400,
                 size:  AppDimensions.iconMD,
               ),
           ],
@@ -166,14 +169,14 @@ class SettingsTile extends StatelessWidget {
   }
 }
 
-// ── Toggle tile ───────────────────────────────────────────────
+// ── Toggle tile ───────────────────────────────────────────────────
 class SettingsToggleTile extends StatelessWidget {
-  final IconData  icon;
-  final Color     iconColor;
-  final Color     iconBgColor;
-  final String    title;
-  final String?   subtitle;
-  final bool      value;
+  final IconData           icon;
+  final Color              iconColor;
+  final Color              iconBgColor;
+  final String             title;
+  final String?            subtitle;
+  final bool               value;
   final ValueChanged<bool> onChanged;
 
   const SettingsToggleTile({
@@ -190,15 +193,12 @@ class SettingsToggleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SettingsTile(
-      icon:       icon,
-      iconColor:  iconColor,
+      icon:        icon,
+      iconColor:   iconColor,
       iconBgColor: iconBgColor,
-      title:      title,
-      subtitle:   subtitle,
-      trailing: Switch(
-        value:     value,
-        onChanged: onChanged,
-      ),
+      title:       title,
+      subtitle:    subtitle,
+      trailing:    Switch(value: value, onChanged: onChanged),
     );
   }
 }

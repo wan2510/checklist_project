@@ -5,84 +5,79 @@ class AppTextStyles {
   AppTextStyles._();
 
   // ── Display ──────────────────────────────────────────────────
+  // FIX: Bỏ hardcode color → kế thừa từ theme textTheme
+  // Light mode: textPrimaryLight, Dark mode: textPrimaryDark (tự động)
   static const TextStyle displayLarge = TextStyle(
     fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5,
-    color: AppColors.textPrimaryLight,
   );
 
   static const TextStyle displayMedium = TextStyle(
     fontSize: 28, fontWeight: FontWeight.w700,
-    color: AppColors.textPrimaryLight,
   );
 
   // ── Headline ─────────────────────────────────────────────────
   static const TextStyle headlineLarge = TextStyle(
     fontSize: 24, fontWeight: FontWeight.w700,
-    color: AppColors.textPrimaryLight,
   );
 
   static const TextStyle headlineMedium = TextStyle(
     fontSize: 20, fontWeight: FontWeight.w600,
-    color: AppColors.textPrimaryLight,
   );
 
   static const TextStyle headlineSmall = TextStyle(
     fontSize: 18, fontWeight: FontWeight.w600,
-    color: AppColors.textPrimaryLight,
   );
 
   // ── Title ────────────────────────────────────────────────────
   static const TextStyle titleLarge = TextStyle(
     fontSize: 16, fontWeight: FontWeight.w600,
-    color: AppColors.textPrimaryLight,
   );
 
   static const TextStyle titleMedium = TextStyle(
     fontSize: 14, fontWeight: FontWeight.w600,
-    color: AppColors.textPrimaryLight,
   );
 
+  // titleSmall → secondary text (giữ màu, dùng trên subtitle/label)
   static const TextStyle titleSmall = TextStyle(
     fontSize: 12, fontWeight: FontWeight.w600,
-    color: AppColors.textSecondaryLight,
+    color: AppColors.grey500,
     letterSpacing: 0.5,
   );
 
   // ── Body ─────────────────────────────────────────────────────
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16, fontWeight: FontWeight.w400,
-    color: AppColors.textPrimaryLight,
   );
 
   static const TextStyle bodyMedium = TextStyle(
     fontSize: 14, fontWeight: FontWeight.w400,
-    color: AppColors.textPrimaryLight,
   );
 
+  // bodySmall → secondary text
   static const TextStyle bodySmall = TextStyle(
     fontSize: 12, fontWeight: FontWeight.w400,
-    color: AppColors.textSecondaryLight,
+    color: AppColors.grey500,
   );
 
   // ── Label ────────────────────────────────────────────────────
   static const TextStyle labelLarge = TextStyle(
     fontSize: 14, fontWeight: FontWeight.w500,
-    color: AppColors.textPrimaryLight,
   );
 
+  // labelMedium / labelSmall → secondary
   static const TextStyle labelMedium = TextStyle(
     fontSize: 12, fontWeight: FontWeight.w500,
-    color: AppColors.textSecondaryLight,
+    color: AppColors.grey500,
     letterSpacing: 0.5,
   );
 
   static const TextStyle labelSmall = TextStyle(
     fontSize: 10, fontWeight: FontWeight.w600,
     letterSpacing: 0.8,
-    color: AppColors.textSecondaryLight,
+    color: AppColors.grey500,
   );
 
-  // ── Countdown (số lớn trên banner) ───────────────────────────
+  // ── Countdown (dùng trên banner màu → giữ trắng) ─────────────
   static const TextStyle countdownNumber = TextStyle(
     fontSize: 36, fontWeight: FontWeight.w900,
     color: AppColors.white, letterSpacing: -1,
@@ -94,6 +89,7 @@ class AppTextStyles {
   );
 
   // ── Progress percent ─────────────────────────────────────────
+  // Giữ primary vì dùng để hiển thị % tiến độ (luôn là màu chủ đề)
   static const TextStyle progressPercent = TextStyle(
     fontSize: 13, fontWeight: FontWeight.w700,
     color: AppColors.primary,
@@ -102,12 +98,11 @@ class AppTextStyles {
   // ── Stats card ───────────────────────────────────────────────
   static const TextStyle statNumber = TextStyle(
     fontSize: 26, fontWeight: FontWeight.w800,
-    color: AppColors.textPrimaryLight,
   );
 
   static const TextStyle statLabel = TextStyle(
     fontSize: 10, fontWeight: FontWeight.w600,
-    letterSpacing: 0.8, color: AppColors.textSecondaryLight,
+    letterSpacing: 0.8, color: AppColors.grey500,
   );
 
   // ── Badge / chip ─────────────────────────────────────────────
@@ -124,5 +119,5 @@ class AppTextStyles {
       headlineLarge.copyWith(color: AppColors.white);
 
   static TextStyle get bodyMediumWhite =>
-      bodyMedium.copyWith(color: AppColors.white.withOpacity(0.85));
+      bodyMedium.copyWith(color: AppColors.white.withValues(alpha: 0.85));
 }

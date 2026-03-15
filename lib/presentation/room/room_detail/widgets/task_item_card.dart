@@ -3,6 +3,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../domain/entities/task.dart';
 import '../../../shared/widgets/app_progress_bar.dart';
@@ -33,7 +34,7 @@ class TaskItemCard extends StatelessWidget {
 
         // ── Swipe right: Edit ─────────────────────────────────
         startActionPane: ActionPane(
-          motion:   const DrawerMotion(),
+          motion:      const DrawerMotion(),
           extentRatio: 0.25,
           children: [
             SlidableAction(
@@ -49,7 +50,7 @@ class TaskItemCard extends StatelessWidget {
 
         // ── Swipe left: Delete ────────────────────────────────
         endActionPane: ActionPane(
-          motion:   const DrawerMotion(),
+          motion:      const DrawerMotion(),
           extentRatio: 0.25,
           children: [
             SlidableAction(
@@ -68,17 +69,20 @@ class TaskItemCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(AppDimensions.spaceLG),
             decoration: BoxDecoration(
-              color:        AppColors.white,
+              // FIX: context.cardColor → dark mode tự động
+              color:        context.cardColor,
               borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
               border: task.isOverdue
                   ? Border.all(
-                color: AppColors.statusOverdue.withValues(alpha:0.4),
+                color: AppColors.statusOverdue.withValues(alpha: 0.4),
                 width: 1,
               )
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color:      AppColors.grey300.withValues(alpha:0.3),
+                  color:      context.isDark
+                      ? Colors.black26
+                      : AppColors.grey300.withValues(alpha: 0.3),
                   blurRadius: 6,
                   offset:     const Offset(0, 2),
                 ),
@@ -100,14 +104,14 @@ class TaskItemCard extends StatelessWidget {
                         height: 24,
                         decoration: BoxDecoration(
                           color: task.isCompleted
-                              ? AppColors.primary
+                              ? Theme.of(context).colorScheme.primary
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(
                             AppDimensions.radiusXS,
                           ),
                           border: Border.all(
                             color: task.isCompleted
-                                ? AppColors.primary
+                                ? Theme.of(context).colorScheme.primary
                                 : AppColors.grey300,
                             width: 1.5,
                           ),
@@ -131,9 +135,10 @@ class TaskItemCard extends StatelessWidget {
                           decoration: task.isCompleted
                               ? TextDecoration.lineThrough
                               : null,
+                          // FIX: dark mode text
                           color: task.isCompleted
                               ? AppColors.grey400
-                              : AppColors.textPrimaryLight,
+                              : context.textPrimary,
                         ),
                       ),
                     ),
@@ -152,7 +157,7 @@ class TaskItemCard extends StatelessWidget {
                 // ── Row 2: deadline ───────────────────────────
                 Row(
                   children: [
-                    const SizedBox(width: 36), // align với title
+                    const SizedBox(width: 36),
                     Icon(
                       Icons.calendar_today_outlined,
                       size:  AppDimensions.iconSM,
@@ -180,13 +185,13 @@ class TaskItemCard extends StatelessWidget {
                           vertical:   1,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.statusOverdue.withValues(alpha:0.1),
+                          color: AppColors.statusOverdue.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(
                             AppDimensions.radiusXS,
                           ),
                         ),
                         child: Text(
-                          'Hôm qua',
+                          'Quá hạn',
                           style: AppTextStyles.labelSmall.copyWith(
                             color: AppColors.statusOverdue,
                           ),
@@ -201,7 +206,7 @@ class TaskItemCard extends StatelessWidget {
                           vertical:   2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.statusDone.withValues(alpha:0.1),
+                          color: AppColors.statusDone.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(
                             AppDimensions.radiusFull,
                           ),
@@ -233,7 +238,7 @@ class TaskItemCard extends StatelessWidget {
                       Text(
                         '${task.progressPercent}%',
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ],

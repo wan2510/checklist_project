@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class TaskGroupHeader extends StatelessWidget {
@@ -17,6 +18,7 @@ class TaskGroupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOverdue = groupKey == 'QUÁ HẠN';
+    final primary   = Theme.of(context).colorScheme.primary; // FIX
 
     return Padding(
       padding: const EdgeInsets.only(
@@ -31,9 +33,7 @@ class TaskGroupHeader extends StatelessWidget {
             height: 6,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isOverdue
-                  ? AppColors.statusOverdue
-                  : AppColors.primary,
+              color: isOverdue ? AppColors.statusOverdue : primary,
             ),
           ),
           const SizedBox(width: AppDimensions.spaceSM),
@@ -44,7 +44,7 @@ class TaskGroupHeader extends StatelessWidget {
             style: AppTextStyles.titleSmall.copyWith(
               color: isOverdue
                   ? AppColors.statusOverdue
-                  : AppColors.textSecondaryLight,
+                  : context.textPrimary, // FIX: dark mode
             ),
           ),
           const SizedBox(width: AppDimensions.spaceXS),
@@ -57,18 +57,14 @@ class TaskGroupHeader extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: isOverdue
-                  ? AppColors.statusOverdue.withOpacity(0.1)
-                  : AppColors.grey100,
-              borderRadius: BorderRadius.circular(
-                AppDimensions.radiusFull,
-              ),
+                  ? AppColors.statusOverdue.withValues(alpha: 0.1)
+                  : primary.withValues(alpha: 0.08), // FIX
+              borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
             ),
             child: Text(
               '$count việc',
               style: AppTextStyles.labelSmall.copyWith(
-                color: isOverdue
-                    ? AppColors.statusOverdue
-                    : AppColors.grey500,
+                color: isOverdue ? AppColors.statusOverdue : primary, // FIX
               ),
             ),
           ),

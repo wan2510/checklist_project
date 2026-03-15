@@ -126,5 +126,5 @@ Future<void> setupDependencies() async {
     prefs:      sl(),
   ));
 
-  sl.registerFactory(() => SettingsViewModel(prefs: sl()));
+  sl.registerLazySingleton(() => SettingsViewModel(prefs: sl()));
 }

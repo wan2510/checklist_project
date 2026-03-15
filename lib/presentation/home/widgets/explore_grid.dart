@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 
 class ExploreGrid extends StatelessWidget {
@@ -23,8 +25,8 @@ class ExploreGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       _GridItem(
-        emoji:    '🏠',
-        label:    AppStrings.menuRoomList,
+        icon:    HugeIcons.strokeRoundedHome09,
+        label:   AppStrings.menuRoomList,
         gradient: const LinearGradient(
           colors: [Color(0xFFFF6B6B), Color(0xFFE8344E)],
           begin:  Alignment.topLeft,
@@ -33,8 +35,8 @@ class ExploreGrid extends StatelessWidget {
         onTap: onRoomList,
       ),
       _GridItem(
-        emoji:    '📋',
-        label:    AppStrings.menuAllTasks,
+        icon:    HugeIcons.strokeRoundedTaskDone01,
+        label:   AppStrings.menuAllTasks,
         gradient: const LinearGradient(
           colors: [Color(0xFF7C5CBF), Color(0xFF9B7FD4)],
           begin:  Alignment.topLeft,
@@ -43,8 +45,8 @@ class ExploreGrid extends StatelessWidget {
         onTap: onAllTasks,
       ),
       _GridItem(
-        emoji:    '📅',
-        label:    AppStrings.menuCalendar,
+        icon:    HugeIcons.strokeRoundedCalendar03,
+        label:   AppStrings.menuCalendar,
         gradient: const LinearGradient(
           colors: [Color(0xFFF5A623), Color(0xFFFFCC70)],
           begin:  Alignment.topLeft,
@@ -53,8 +55,8 @@ class ExploreGrid extends StatelessWidget {
         onTap: onCalendar,
       ),
       _GridItem(
-        emoji:    '📊',
-        label:    AppStrings.menuReport,
+        icon:    HugeIcons.strokeRoundedAnalytics01,
+        label:   AppStrings.menuReport,
         gradient: const LinearGradient(
           colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
           begin:  Alignment.topLeft,
@@ -77,13 +79,13 @@ class ExploreGrid extends StatelessWidget {
 }
 
 class _GridItem extends StatelessWidget {
-  final String         emoji;
-  final String         label;
-  final LinearGradient gradient;
-  final VoidCallback   onTap;
+  final List<List<dynamic>> icon;
+  final String              label;
+  final LinearGradient      gradient;
+  final VoidCallback        onTap;
 
   const _GridItem({
-    required this.emoji,
+    required this.icon,
     required this.label,
     required this.gradient,
     required this.onTap,
@@ -95,11 +97,13 @@ class _GridItem extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color:        AppColors.white,
+          color:        context.cardColor,
           borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
           boxShadow: [
             BoxShadow(
-              color:      AppColors.grey300.withValues(alpha:0.4),
+              color:      context.isDark
+                  ? Colors.black26
+                  : AppColors.grey300.withValues(alpha: 0.4),
               blurRadius: 8,
               offset:     const Offset(0, 2),
             ),
@@ -111,26 +115,27 @@ class _GridItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment:  MainAxisAlignment.spaceBetween,
             children: [
-              // ── Icon container ──────────────────────────────
               Container(
-                width:  44,
-                height: 44,
+                width:  48,
+                height: 48,
                 decoration: BoxDecoration(
                   gradient:     gradient,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                 ),
                 child: Center(
-                  child: Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 22),
+                  child: HugeIcon(
+                    icon:        icon,
+                    color:       AppColors.white,
+                    size:        24,
+                    strokeWidth: 1.6,
                   ),
                 ),
               ),
-
-              // ── Label ────────────────────────────────────────
               Text(
                 label,
-                style: AppTextStyles.titleMedium,
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: context.textPrimary,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),

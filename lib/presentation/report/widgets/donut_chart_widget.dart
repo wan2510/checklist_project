@@ -2,7 +2,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 
 class DonutChartWidget extends StatelessWidget {
@@ -24,6 +23,9 @@ class DonutChartWidget extends StatelessWidget {
     final total = completedTasks + inProgressTasks + pendingTasks;
     if (total == 0) return const SizedBox.shrink();
 
+    // FIX: dùng theme primary cho text "100%"
+    final primary = Theme.of(context).colorScheme.primary;
+
     return SizedBox(
       height: 200,
       child: Stack(
@@ -32,26 +34,26 @@ class DonutChartWidget extends StatelessWidget {
           // ── Pie chart ─────────────────────────────────────
           PieChart(
             PieChartData(
-              sectionsSpace:  3,
+              sectionsSpace:     3,
               centerSpaceRadius: 65,
               sections: [
                 PieChartSectionData(
-                  value:      completedTasks.toDouble(),
-                  color:      AppColors.statusDone,
-                  radius:     30,
-                  showTitle:  false,
+                  value:     completedTasks.toDouble(),
+                  color:     AppColors.statusDone,
+                  radius:    30,
+                  showTitle: false,
                 ),
                 PieChartSectionData(
-                  value:      inProgressTasks.toDouble(),
-                  color:      AppColors.statusInProgress,
-                  radius:     30,
-                  showTitle:  false,
+                  value:     inProgressTasks.toDouble(),
+                  color:     AppColors.statusInProgress,
+                  radius:    30,
+                  showTitle: false,
                 ),
                 PieChartSectionData(
-                  value:      pendingTasks.toDouble(),
-                  color:      AppColors.grey200,
-                  radius:     30,
-                  showTitle:  false,
+                  value:     pendingTasks.toDouble(),
+                  color:     AppColors.grey200,
+                  radius:    30,
+                  showTitle: false,
                 ),
               ],
             ),
@@ -64,15 +66,14 @@ class DonutChartWidget extends StatelessWidget {
               Text(
                 '$completionPercent%',
                 style: AppTextStyles.headlineLarge.copyWith(
-                  color:      AppColors.primary,
+                  // FIX: màu theo theme thay vì AppColors.primary hardcode
+                  color:      primary,
                   fontWeight: FontWeight.w900,
                 ),
               ),
               Text(
                 'hoàn thành',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.grey500,
-                ),
+                style: AppTextStyles.bodySmall,
               ),
             ],
           ),

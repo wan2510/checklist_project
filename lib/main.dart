@@ -6,61 +6,43 @@ import 'package:timezone/data/latest.dart' as tz;
 
 import 'app.dart';
 import 'core/utils/notification_utils.dart';
-import 'data/local/database/app_database.dart';
-// import 'data/local/database/seed/task_seed_data.dart';
-import 'data/local/preferences/app_preferences.dart';
 import 'di/injection_container.dart';
 import 'presentation/settings/settings_viewmodel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ── Orientation ───────────────────────────────────────────────
+  // ── Orientation─────────────────────
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // ── Timezone ──────────────────────────────────────────────────
+  // ── Timezone ──────────────────────────
   tz.initializeTimeZones();
 
-  // ── Locale ────────────────────────────────────────────────────
+  // ── Locale────────────────────────────────
   await initializeDateFormatting('vi_VN', null);
 
-  // ── Notifications ─────────────────────────────────────────────
-  await NotificationUtils.initialize();
-  await NotificationUtils.requestPermission();
-
-  // ── Dependency Injection ──────────────────────────────────────
+  // ── Dependency Injection (DB + Prefs) ────────────
+  // await trước runApp để DI sẵn sàng,
+  // Notification init chuyển sang chạy song song
   await setupDependencies();
 
-//  // ── Seed data lần đầu ────────────────────────────────────────
-//   await _seedDataIfFirstLaunch();
-//
+  // ── runApp ngay — SplashScreen sẽ hiện trong lúc chờ ─────────
   runApp(
     ChangeNotifierProvider<SettingsViewModel>(
       create: (_) {
         final vm = sl<SettingsViewModel>();
-        vm.init(); //  init trước, không await, không notify
+        vm.init(); // không await, không block UI
         return vm;
       },
       child: const App(),
     ),
   );
 
-//}
-
-// Future<void> _seedDataIfFirstLaunch() async {
-//   final prefs = sl<AppPreferences>();
-//   final isFirst = await prefs.isFirstLaunch;
-//   if (!isFirst) return;
-//
-//   try {
-//     final db = sl<AppDatabase>();
-//     await db.taskDao.insertTasks(TaskSeedData.samples);
-//     await prefs.setIsFirstLaunch(false);
-//     debugPrint('Seed data inserted: 9 tasks');
-//   } catch (e) {
-//     debugPrint('Seed error: $e');
-//   }
+  // ── Notification init SAU khi UI đã render ────────────────────
+  // Splash screen kéo dài 2.5s — đủ thời gian init notification
+  await NotificationUtils.initialize();
+  await NotificationUtils.requestPermission();
 }

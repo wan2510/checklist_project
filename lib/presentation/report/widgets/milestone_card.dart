@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../domain/entities/room.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_progress_bar.dart';
@@ -18,14 +19,21 @@ class MilestoneCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary     = Theme.of(context).colorScheme.primary;
+    final primaryDark = Color.lerp(primary, Colors.black, 0.15)!;
+
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceXXL),
       decoration: BoxDecoration(
-        gradient:     AppColors.primaryGradient,
+        gradient: LinearGradient(
+          colors: [primary, primaryDark],
+          begin:  Alignment.topLeft,
+          end:    Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
         boxShadow: [
           BoxShadow(
-            color:      AppColors.primary.withValues(alpha:0.3),
+            color:      primary.withValues(alpha: 0.3),
             blurRadius: 16,
             offset:     const Offset(0, 6),
           ),
@@ -33,12 +41,12 @@ class MilestoneCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ── Trophy icon ────────────────────────────────────
+          // ── Trophy icon ──────────────────────────────────────
           Container(
             width:  56,
             height: 56,
             decoration: BoxDecoration(
-              color:        AppColors.white.withValues(alpha:0.2),
+              color:        AppColors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
             ),
             child: const Center(
@@ -47,7 +55,7 @@ class MilestoneCard extends StatelessWidget {
           ),
           const SizedBox(width: AppDimensions.spaceLG),
 
-          // ── Text ──────────────────────────────────────────
+          // ── Text ──────────────────────────────────────────────
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,7 +63,7 @@ class MilestoneCard extends StatelessWidget {
                 Text(
                   'Thành tích: Bậc Thầy Dọn Dẹp',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color:         AppColors.white.withValues(alpha:0.8),
+                    color:         AppColors.white.withValues(alpha: 0.8),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -74,7 +82,7 @@ class MilestoneCard extends StatelessWidget {
                         value:           completionPercent / 100,
                         height:          4,
                         fillColor:       AppColors.white,
-                        backgroundColor: AppColors.white.withValues(alpha:0.3),
+                        backgroundColor: AppColors.white.withValues(alpha: 0.3),
                         animated:        false,
                       ),
                     ),
@@ -96,7 +104,7 @@ class MilestoneCard extends StatelessWidget {
   }
 }
 
-// ── Upcoming milestones ───────────────────────────────────────
+// ── Upcoming milestones ────────────────────────────────────────────
 class UpcomingMilestones extends StatelessWidget {
   final List<Room> roomStats;
 
@@ -107,12 +115,15 @@ class UpcomingMilestones extends StatelessWidget {
     final nearDone = roomStats
         .where((r) =>
     r.progressPercent >= 0.6 &&
-        r.progressPercent < 1.0 &&
+        r.progressPercent < 1.0  &&
         r.totalTasks > 0)
         .take(3)
         .toList();
 
     if (nearDone.isEmpty) return const SizedBox.shrink();
+
+    // FIX: theme primary cho icon tint
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,17 +134,18 @@ class UpcomingMilestones extends StatelessWidget {
         ),
         const SizedBox(height: AppDimensions.spaceMD),
         ...nearDone.map((room) => Padding(
-          padding: const EdgeInsets.only(
-            bottom: AppDimensions.spaceMD,
-          ),
+          padding: const EdgeInsets.only(bottom: AppDimensions.spaceMD),
           child: Container(
             padding: const EdgeInsets.all(AppDimensions.spaceLG),
             decoration: BoxDecoration(
-              color:        AppColors.white,
+              // FIX: dark mode card bg
+              color:        context.cardColor,
               borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
               boxShadow: [
                 BoxShadow(
-                  color:      AppColors.grey300.withValues(alpha:0.3),
+                  color:      context.isDark
+                      ? Colors.black26
+                      : AppColors.grey300.withValues(alpha: 0.3),
                   blurRadius: 6,
                   offset:     const Offset(0, 2),
                 ),
@@ -141,19 +153,18 @@ class UpcomingMilestones extends StatelessWidget {
             ),
             child: Row(
               children: [
+                // FIX: icon tint theo theme
                 Container(
                   width:  36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color:        AppColors.primary.withValues(alpha:0.1),
-                    borderRadius: BorderRadius.circular(
-                      AppDimensions.radiusSM,
-                    ),
+                    color:        primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
                   ),
                   child: Center(
                     child: Icon(
                       Icons.trending_up_rounded,
-                      color: AppColors.primary,
+                      color: primary,
                       size:  AppDimensions.iconMD,
                     ),
                   ),
@@ -165,18 +176,19 @@ class UpcomingMilestones extends StatelessWidget {
                     children: [
                       Text(
                         room.name,
-                        style: AppTextStyles.titleMedium,
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: context.textPrimary,
+                        ),
                       ),
                       Text(
                         'Hoàn thành ${room.progressInt}% ${room.name}',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.grey500,
-                        ),
+                        style: AppTextStyles.bodySmall,
                       ),
                       const SizedBox(height: AppDimensions.spaceXS),
                       AppProgressBar(
-                        value:  room.progressPercent,
-                        height: 4,
+                        value:     room.progressPercent,
+                        height:    4,
+                        fillColor: primary,
                       ),
                     ],
                   ),

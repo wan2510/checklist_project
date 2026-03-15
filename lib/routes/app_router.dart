@@ -22,6 +22,7 @@ import '../presentation/settings/settings_viewmodel.dart';
 import '../presentation/splash/splash_viewmodel.dart';
 import '../presentation/welcome/welcome_screen.dart';
 import '../core/enums/room_type.dart';
+import '../presentation/shared/widgets/tet_petal_overlay.dart'; // FIX: import overlay
 import 'app_routes.dart';
 
 class AppRouter {
@@ -32,7 +33,6 @@ class AppRouter {
     debugLogDiagnostics: false,
     routes: [
 
-      // ── Splash ───────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.splash,
         builder: (context, state) => SplashScreen(
@@ -40,13 +40,12 @@ class AppRouter {
         ),
       ),
 
-      // ── Welcome ──────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.welcome,
         builder: (context, state) => const WelcomeScreen(),
       ),
 
-      // ── Shell: Bottom Nav ─────────────────────────────────────
+      // ── Shell: Bottom Nav (5 tab) — wrap với TetPetalOverlay ───
       ShellRoute(
         builder: (context, state, child) => _MainShell(child: child),
         routes: [
@@ -121,18 +120,20 @@ class AppRouter {
         ],
       ),
 
-      // ── Settings ──────────────────────────────────────────────
+      // ── Settings — cũng có hoa rơi ────────────────────────────
       GoRoute(
         path: AppRoutes.settings,
-        builder: (context, state) => SettingsScreen(
-          viewModel: sl<SettingsViewModel>(),
+        builder: (context, state) => TetPetalOverlay(
+          child: SettingsScreen(
+            viewModel: sl<SettingsViewModel>(),
+          ),
         ),
       ),
     ],
   );
 }
 
-// ── Main Shell — Bottom Navigation Bar ───────────────────────────
+// ── Main Shell ────────────────────────────────────────────────────
 class _MainShell extends StatelessWidget {
   final Widget child;
   const _MainShell({required this.child});
@@ -145,7 +146,6 @@ class _MainShell extends StatelessWidget {
     AppRoutes.report,
   ];
 
-  // ✅ Tính index từ router location — luôn đúng kể cả khi back
   int _getCurrentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     for (int i = 0; i < _tabs.length; i++) {
@@ -159,7 +159,8 @@ class _MainShell extends StatelessWidget {
     final currentIndex = _getCurrentIndex(context);
 
     return Scaffold(
-      body: child,
+      // FIX: bọc body + bottom nav trong TetPetalOverlay
+      body: TetPetalOverlay(child: child),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) => context.go(_tabs[index]),

@@ -17,7 +17,7 @@ class FabAddButton extends StatelessWidget {
     return FloatingActionButton(
       onPressed:       onPressed,
       tooltip:         tooltip,
-      backgroundColor: AppColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       elevation:       4,
       shape: const CircleBorder(),
       child: const Icon(

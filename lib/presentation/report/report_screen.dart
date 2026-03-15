@@ -38,7 +38,7 @@ class _ReportScreenState extends State<ReportScreen> {
       value: widget.viewModel,
       child: Consumer<ReportViewModel>(
         builder: (_, vm, __) => Scaffold(
-          backgroundColor: context.bgColor,                    // ✅
+          backgroundColor: context.bgColor,
           body:            _buildBody(vm),
         ),
       ),
@@ -54,40 +54,35 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // ── AppBar ────────────────────────────────────────────────────
   Widget _buildAppBar() {
     return SliverAppBar(
       floating:        true,
       snap:            true,
-      backgroundColor: context.surfaceColor,                   // ✅
+      backgroundColor: context.surfaceColor,
       elevation:       0,
       titleSpacing:    AppDimensions.screenPaddingH,
       title: Text(
         'Báo cáo tiến độ',
-        style: AppTextStyles.headlineSmall.copyWith(
-          color: context.textPrimary,                          // ✅
-        ),
+        style: AppTextStyles.headlineSmall.copyWith(color: context.textPrimary),
       ),
       actions: [
         IconButton(
-          icon: Icon(
-            Icons.refresh_rounded,
-            color: context.textPrimary,                        // ✅
-          ),
+          icon: Icon(Icons.refresh_rounded, color: context.textPrimary),
           onPressed: () => widget.viewModel.refresh(),
         ),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: context.dividerColor), // ✅
+        child: Container(height: 1, color: context.dividerColor),
       ),
     );
   }
 
-  // ── Content ───────────────────────────────────────────────────
   Widget _buildContent(ReportViewModel vm) {
+    final primary = Theme.of(context).colorScheme.primary; // FIX
+
     return RefreshIndicator(
-      color:     AppColors.primary,
+      color:     primary, // FIX
       onRefresh: vm.refresh,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.screenPaddingH),
@@ -110,24 +105,20 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
             const SizedBox(height: AppDimensions.spaceLG),
 
-            _buildAvgTimeCard(vm),
+            _buildAvgTimeCard(vm, primary),
             const SizedBox(height: AppDimensions.spaceXXL),
 
             SectionHeader(title: 'Trạng thái hoàn thành'),
             Text(
               'Tỉ lệ công việc đã thực hiện',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.grey500,
-              ),
+              style: AppTextStyles.bodySmall,
             ),
             const SizedBox(height: AppDimensions.spaceLG),
             _buildChartCard(
               child: DonutChartWidget(
-                completedTasks:  vm.completedTasks,
-                inProgressTasks: vm.inProgressTasks,
-                pendingTasks:    vm.totalTasks -
-                    vm.completedTasks -
-                    vm.inProgressTasks,
+                completedTasks:    vm.completedTasks,
+                inProgressTasks:   vm.inProgressTasks,
+                pendingTasks:      vm.totalTasks - vm.completedTasks - vm.inProgressTasks,
                 completionPercent: vm.completionPct,
               ),
             ),
@@ -136,22 +127,16 @@ class _ReportScreenState extends State<ReportScreen> {
             SectionHeader(title: 'Hiệu suất theo tuần'),
             Text(
               'Số việc hoàn thành 7 ngày qua',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.grey500,
-              ),
+              style: AppTextStyles.bodySmall,
             ),
             const SizedBox(height: AppDimensions.spaceLG),
-            _buildChartCard(
-              child: BarChartWidget(weeklyData: vm.weeklyData),
-            ),
+            _buildChartCard(child: BarChartWidget(weeklyData: vm.weeklyData)),
             const SizedBox(height: AppDimensions.spaceXXL),
 
             SectionHeader(title: 'Phân bổ theo phòng'),
             Text(
               'Khối lượng công việc mỗi khu vực',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.grey500,
-              ),
+              style: AppTextStyles.bodySmall,
             ),
             const SizedBox(height: AppDimensions.spaceLG),
             _buildRoomDistribution(vm),
@@ -165,18 +150,15 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // ── Avg time card ─────────────────────────────────────────────
-  Widget _buildAvgTimeCard(ReportViewModel vm) {
+  Widget _buildAvgTimeCard(ReportViewModel vm, Color primary) {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceXXL),
       decoration: BoxDecoration(
-        color:        context.cardColor,                       // ✅
+        color:        context.cardColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         boxShadow: [
           BoxShadow(
-            color:      context.isDark
-                ? Colors.black26
-                : AppColors.grey300.withValues(alpha: 0.3),   // ✅
+            color:      context.isDark ? Colors.black26 : AppColors.grey300.withValues(alpha: 0.3),
             blurRadius: 6,
             offset:     const Offset(0, 2),
           ),
@@ -184,16 +166,17 @@ class _ReportScreenState extends State<ReportScreen> {
       ),
       child: Row(
         children: [
+          // FIX: icon tint theo theme
           Container(
             width:  48,
             height: 48,
             decoration: BoxDecoration(
-              color:        AppColors.primary.withValues(alpha: 0.1),
+              color:        primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.trending_up_rounded,
-              color: AppColors.primary,
+              color: primary,
               size:  AppDimensions.iconLG,
             ),
           ),
@@ -203,23 +186,20 @@ class _ReportScreenState extends State<ReportScreen> {
             children: [
               Text(
                 '${vm.avgMinutes.toInt()} phút / việc',
-                style: AppTextStyles.headlineSmall.copyWith(
-                  color: context.textPrimary,                  // ✅
-                ),
+                style: AppTextStyles.headlineSmall.copyWith(color: context.textPrimary),
               ),
               Text(
                 'Thời gian trung bình hoàn thành',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.grey500,
-                ),
+                style: AppTextStyles.bodySmall,
               ),
             ],
           ),
           const Spacer(),
+          // FIX: "HIỆU SUẤT" label theo theme
           Text(
             'HIỆU SUẤT',
             style: AppTextStyles.labelSmall.copyWith(
-              color:         AppColors.primary,
+              color:         primary,
               letterSpacing: 1,
             ),
           ),
@@ -228,18 +208,15 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // ── Chart card wrapper ────────────────────────────────────────
   Widget _buildChartCard({required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceXXL),
       decoration: BoxDecoration(
-        color:        context.cardColor,                       // ✅
+        color:        context.cardColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
         boxShadow: [
           BoxShadow(
-            color:      context.isDark
-                ? Colors.black26
-                : AppColors.grey300.withValues(alpha: 0.3),   // ✅
+            color:      context.isDark ? Colors.black26 : AppColors.grey300.withValues(alpha: 0.3),
             blurRadius: 8,
             offset:     const Offset(0, 2),
           ),
@@ -249,24 +226,18 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // ── Room distribution ─────────────────────────────────────────
   Widget _buildRoomDistribution(ReportViewModel vm) {
-    final rooms = vm.stats.roomStats
-        .where((r) => r.totalTasks > 0)
-        .toList();
-
+    final rooms = vm.stats.roomStats.where((r) => r.totalTasks > 0).toList();
     if (rooms.isEmpty) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceXXL),
       decoration: BoxDecoration(
-        color:        context.cardColor,                       // ✅
+        color:        context.cardColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
         boxShadow: [
           BoxShadow(
-            color:      context.isDark
-                ? Colors.black26
-                : AppColors.grey300.withValues(alpha: 0.3),   // ✅
+            color:      context.isDark ? Colors.black26 : AppColors.grey300.withValues(alpha: 0.3),
             blurRadius: 8,
             offset:     const Offset(0, 2),
           ),
@@ -276,8 +247,7 @@ class _ReportScreenState extends State<ReportScreen> {
         children: rooms.asMap().entries.map((entry) {
           final index = entry.key;
           final room  = entry.value;
-          final color = AppColors.chartColors[
-          index % AppColors.chartColors.length];
+          final color = AppColors.chartColors[index % AppColors.chartColors.length];
 
           return Padding(
             padding: const EdgeInsets.only(bottom: AppDimensions.spaceMD),
@@ -285,7 +255,6 @@ class _ReportScreenState extends State<ReportScreen> {
               children: [
                 Text(room.emoji, style: const TextStyle(fontSize: 18)),
                 const SizedBox(width: AppDimensions.spaceMD),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,29 +264,20 @@ class _ReportScreenState extends State<ReportScreen> {
                         children: [
                           Text(
                             room.name,
-                            style: AppTextStyles.titleSmall.copyWith(
-                              color: context.textPrimary,      // ✅
-                            ),
+                            style: AppTextStyles.titleSmall.copyWith(color: context.textPrimary),
                           ),
                           Text(
                             '${room.completedTasks}/${room.totalTasks}',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.grey500,
-                            ),
+                            style: AppTextStyles.bodySmall,
                           ),
                         ],
                       ),
                       const SizedBox(height: AppDimensions.spaceXS),
-                      AppProgressBar(
-                        value:     room.progressPercent,
-                        height:    6,
-                        fillColor: color,
-                      ),
+                      AppProgressBar(value: room.progressPercent, height: 6, fillColor: color),
                     ],
                   ),
                 ),
                 const SizedBox(width: AppDimensions.spaceMD),
-
                 SizedBox(
                   width: 36,
                   child: Text(

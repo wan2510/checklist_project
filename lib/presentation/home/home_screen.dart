@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Consumer<HomeViewModel>(
         builder: (context, vm, _) {
           return Scaffold(
-            backgroundColor: context.bgColor,                  // ✅
+            backgroundColor: context.bgColor,
             body:            _buildBody(vm),
             floatingActionButton: FabAddButton(
               onPressed: () => AddTaskBottomSheet.show(
@@ -63,7 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return RefreshIndicator(
-      color:     AppColors.primary,
+      // FIX: dùng theme primary
+      color:     Theme.of(context).colorScheme.primary,
       onRefresh: vm.refresh,
       child: CustomScrollView(
         slivers: [
@@ -120,20 +121,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── SliverAppBar ──────────────────────────────────────────────
   Widget _buildSliverAppBar() {
+    // FIX: đọc theme primary để build gradient icon
+    final primary      = Theme.of(context).colorScheme.primary;
+    final primaryLight = Color.lerp(primary, Colors.white, 0.25)!;
+
     return SliverAppBar(
       floating:        true,
       snap:            true,
-      backgroundColor: context.bgColor,                        // ✅
+      backgroundColor: context.bgColor,
       elevation:       0,
       expandedHeight:  0,
       titleSpacing:    AppDimensions.screenPaddingH,
       title: Row(
         children: [
+          // FIX: gradient dùng theme primary thay vì AppColors.primaryGradient
           Container(
             width:  36,
             height: 36,
             decoration: BoxDecoration(
-              gradient:     AppColors.primaryGradient,
+              gradient: LinearGradient(
+                colors: [primary, primaryLight],
+                begin:  Alignment.topLeft,
+                end:    Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
             ),
             child: const Icon(
@@ -146,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(
             AppStrings.homeTitle,
             style: AppTextStyles.headlineMedium.copyWith(
-              color: context.textPrimary,                      // ✅
+              color: context.textPrimary,
             ),
           ),
         ],
@@ -155,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
         IconButton(
           icon: Icon(
             Icons.settings_outlined,
-            color: context.textPrimary,                        // ✅
+            color: context.textPrimary,
           ),
           onPressed: () => context.push(AppRoutes.settings),
         ),
@@ -169,17 +179,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final done    = vm.stats.completedTasks;
     final total   = vm.stats.totalTasks;
     final overdue = vm.overdueCount;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceXXL),
       decoration: BoxDecoration(
-        color:        context.cardColor,                       // ✅
+        color:        context.cardColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
         boxShadow: [
           BoxShadow(
             color:      context.isDark
                 ? Colors.black26
-                : AppColors.grey300.withValues(alpha: 0.4),   // ✅
+                : AppColors.grey300.withValues(alpha: 0.4),
             blurRadius: 8,
             offset:     const Offset(0, 2),
           ),
@@ -194,13 +205,15 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 AppStrings.overallProgress,
                 style: AppTextStyles.titleSmall.copyWith(
-                  color: context.textPrimary,                  // ✅
+                  color: context.textPrimary,
                 ),
               ),
               Text(
                 '$percent%',
                 style: AppTextStyles.progressPercent.copyWith(
                   fontSize: 15,
+                  // FIX: % tiến độ theo theme
+                  color: primary,
                 ),
               ),
             ],
@@ -208,8 +221,9 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: AppDimensions.spaceMD),
 
           AppProgressBar(
-            value:  percent / 100,
-            height: 10,
+            value:     percent / 100,
+            height:    10,
+            fillColor: primary, // FIX: progress bar theo theme
           ),
           const SizedBox(height: AppDimensions.spaceMD),
 
@@ -218,9 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Flexible(
                 child: Text(
                   '$done / $total ${AppStrings.taskDone}',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.grey500,
-                  ),
+                  style: AppTextStyles.bodySmall,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -257,9 +269,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceXXL),
       decoration: BoxDecoration(
-        color:        context.cardColor,                       // ✅
+        color:        context.cardColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
-        border:       Border.all(color: context.dividerColor), // ✅
+        border:       Border.all(color: context.dividerColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

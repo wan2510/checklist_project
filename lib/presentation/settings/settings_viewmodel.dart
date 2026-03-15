@@ -39,6 +39,7 @@ class SettingsViewModel extends ChangeNotifier {
     _defaultReminder  = _prefs.defaultReminderTime;
     _userName         = _prefs.userName;
     _birthday         = _prefs.birthday;
+    notifyListeners();
   }
 
   // ── Dark Mode ────────────────────────────────────────────────

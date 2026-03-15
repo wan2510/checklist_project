@@ -5,8 +5,8 @@ import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class ProgressSlider extends StatelessWidget {
-  final int                value;    // 0 → 100
-  final ValueChanged<int>  onChanged;
+  final int               value;    // 0 → 100
+  final ValueChanged<int> onChanged;
 
   const ProgressSlider({
     super.key,
@@ -16,15 +16,17 @@ class ProgressSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary; // FIX
+
     return Column(
       children: [
         // ── Labels ────────────────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('BẮT ĐẦU',   style: AppTextStyles.labelSmall),
-            Text('ĐANG LÀM',  style: AppTextStyles.labelSmall),
-            Text('XONG',      style: AppTextStyles.labelSmall),
+            Text('BẮT ĐẦU',  style: AppTextStyles.labelSmall),
+            Text('ĐANG LÀM', style: AppTextStyles.labelSmall),
+            Text('XONG',     style: AppTextStyles.labelSmall),
           ],
         ),
         const SizedBox(height: AppDimensions.spaceXS),
@@ -32,21 +34,21 @@ class ProgressSlider extends StatelessWidget {
         // ── Slider ────────────────────────────────────────────
         SliderTheme(
           data: SliderThemeData(
-            activeTrackColor:   AppColors.primary,
+            activeTrackColor:   primary,
             inactiveTrackColor: AppColors.grey200,
-            thumbColor:         AppColors.primary,
-            overlayColor:       AppColors.primary.withOpacity(0.15),
+            thumbColor:         primary,
+            overlayColor:       primary.withValues(alpha: 0.15),
             trackHeight:        4,
             thumbShape: const RoundSliderThumbShape(
               enabledThumbRadius: 10,
             ),
           ),
           child: Slider(
-            value:    value.toDouble(),
-            min:      0,
-            max:      100,
+            value:     value.toDouble(),
+            min:       0,
+            max:       100,
             divisions: 20,
-            label:    '$value%',
+            label:     '$value%',
             onChanged: (v) => onChanged(v.round()),
           ),
         ),
@@ -59,14 +61,12 @@ class ProgressSlider extends StatelessWidget {
               vertical:   AppDimensions.spaceXS,
             ),
             decoration: BoxDecoration(
-              color:        AppColors.primary.withOpacity(0.1),
+              color:        primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
             ),
             child: Text(
               '$value%',
-              style: AppTextStyles.titleMedium.copyWith(
-                color: AppColors.primary,
-              ),
+              style: AppTextStyles.titleMedium.copyWith(color: primary),
             ),
           ),
         ),

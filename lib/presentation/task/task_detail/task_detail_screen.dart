@@ -166,7 +166,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             children: [
               Expanded(child: _buildRoomDropdown(vm)),
               const SizedBox(width: AppDimensions.spaceMD),
-              Expanded(child: _buildPriorityDropdown(vm)),
             ],
           ),
           const SizedBox(height: AppDimensions.spaceXXL),

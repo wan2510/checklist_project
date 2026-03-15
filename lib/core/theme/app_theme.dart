@@ -6,6 +6,29 @@ import 'app_text_styles.dart';
 class AppTheme {
   AppTheme._();
 
+  // ── Helper: build TextTheme theo màu chữ ─────────────────────
+  // Vì AppTextStyles không còn hardcode color, theme cần cấp màu
+  // cho từng style tương ứng qua textTheme
+  static TextTheme _buildTextTheme(Color primaryText, Color secondaryText) {
+    return TextTheme(
+      // Display / Headline / Title primary → primaryText
+      displayLarge:  AppTextStyles.displayLarge.copyWith(color: primaryText),
+      displayMedium: AppTextStyles.displayMedium.copyWith(color: primaryText),
+      headlineLarge: AppTextStyles.headlineLarge.copyWith(color: primaryText),
+      headlineMedium: AppTextStyles.headlineMedium.copyWith(color: primaryText),
+      headlineSmall: AppTextStyles.headlineSmall.copyWith(color: primaryText),
+      titleLarge:    AppTextStyles.titleLarge.copyWith(color: primaryText),
+      titleMedium:   AppTextStyles.titleMedium.copyWith(color: primaryText),
+      titleSmall:    AppTextStyles.titleSmall,   // giữ nguyên grey500
+      bodyLarge:     AppTextStyles.bodyLarge.copyWith(color: primaryText),
+      bodyMedium:    AppTextStyles.bodyMedium.copyWith(color: primaryText),
+      bodySmall:     AppTextStyles.bodySmall,    // giữ nguyên grey500
+      labelLarge:    AppTextStyles.labelLarge.copyWith(color: primaryText),
+      labelMedium:   AppTextStyles.labelMedium,  // giữ nguyên grey500
+      labelSmall:    AppTextStyles.labelSmall,   // giữ nguyên grey500
+    );
+  }
+
   // ── Light Theme ──────────────────────────────────────────────
   static ThemeData get light {
     return ThemeData(
@@ -22,14 +45,22 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
 
-      appBarTheme: const AppBarTheme(
+      // FIX: textTheme với màu chữ SÁNG → DefaultTextStyle đúng cho light mode
+      textTheme: _buildTextTheme(
+        AppColors.textPrimaryLight,
+        AppColors.textSecondaryLight,
+      ),
+
+      appBarTheme: AppBarTheme(
         backgroundColor:        AppColors.white,
         foregroundColor:        AppColors.textPrimaryLight,
         elevation:              0,
         scrolledUnderElevation: 1,
         centerTitle:            false,
-        titleTextStyle:         AppTextStyles.headlineSmall,
-        systemOverlayStyle: SystemUiOverlayStyle(
+        titleTextStyle: AppTextStyles.headlineSmall.copyWith(
+          color: AppColors.textPrimaryLight,
+        ),
+        systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor:          Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
         ),
@@ -160,6 +191,14 @@ class AppTheme {
     return light.copyWith(
       brightness:             Brightness.dark,
       scaffoldBackgroundColor: AppColors.backgroundDark,
+
+      // FIX: textTheme với màu chữ TRẮNG → tất cả Text dùng AppTextStyles
+      // sẽ tự động hiển thị trắng trong dark mode
+      textTheme: _buildTextTheme(
+        AppColors.textPrimaryDark,   // trắng nhạt
+        AppColors.textSecondaryDark, // xám nhạt
+      ),
+
       colorScheme: ColorScheme.dark(
         primary:          AppColors.primary,
         primaryContainer: AppColors.primaryDark.withValues(alpha: 0.3),
@@ -172,6 +211,9 @@ class AppTheme {
       appBarTheme: light.appBarTheme.copyWith(
         backgroundColor: AppColors.surfaceDark,
         foregroundColor: AppColors.textPrimaryDark,
+        titleTextStyle: AppTextStyles.headlineSmall.copyWith(
+          color: AppColors.textPrimaryDark,
+        ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor:          Colors.transparent,
           statusBarIconBrightness: Brightness.light,
@@ -189,6 +231,11 @@ class AppTheme {
       bottomNavigationBarTheme: light.bottomNavigationBarTheme.copyWith(
         backgroundColor:     AppColors.surfaceDark,
         unselectedItemColor: AppColors.grey600,
+      ),
+      dividerTheme: const DividerThemeData(
+        color:     AppColors.grey700,
+        thickness: 1,
+        space:     1,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
@@ -219,8 +266,12 @@ class AppTheme {
     );
   }
 
+  // ── Helper: lighten a color ───────────────────────────────────
+  // Tạo phiên bản sáng hơn của màu chủ đề để dùng trong gradient
+  static Color lighten(Color color, [double amount = 0.2]) =>
+      Color.lerp(color, Colors.white, amount)!;
+
   // ── Static methods cho app.dart ───────────────────────────────
-  // Dùng: AppTheme.lightTheme(settings.themeColor)
   static ThemeData lightTheme([Color? primaryColor]) {
     if (primaryColor == null || primaryColor == AppColors.primary) {
       return light;
@@ -239,6 +290,18 @@ class AppTheme {
           textStyle: AppTextStyles.titleMedium,
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryColor,
+          textStyle:       AppTextStyles.labelLarge,
+        ),
+      ),
+      inputDecorationTheme: light.inputDecorationTheme.copyWith(
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: primaryColor, width: 1.5),
+        ),
+      ),
       bottomNavigationBarTheme: light.bottomNavigationBarTheme.copyWith(
         selectedItemColor: primaryColor,
       ),
@@ -247,10 +310,31 @@ class AppTheme {
         foregroundColor: AppColors.white,
         elevation:       4,
       ),
+      chipTheme: light.chipTheme.copyWith(
+        selectedColor: primaryColor.withValues(alpha: 0.15),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+              ? primaryColor
+              : Colors.transparent,
+        ),
+        side: const BorderSide(color: AppColors.grey400, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+              ? AppColors.white : AppColors.grey400,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+              ? primaryColor : AppColors.grey300,
+        ),
+      ),
     );
   }
 
-  // Dùng: AppTheme.darkTheme(settings.themeColor)
   static ThemeData darkTheme([Color? primaryColor]) {
     if (primaryColor == null || primaryColor == AppColors.primary) {
       return dark;
@@ -269,6 +353,12 @@ class AppTheme {
           textStyle: AppTextStyles.titleMedium,
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryColor,
+          textStyle:       AppTextStyles.labelLarge,
+        ),
+      ),
       bottomNavigationBarTheme: dark.bottomNavigationBarTheme.copyWith(
         selectedItemColor: primaryColor,
       ),
@@ -276,6 +366,24 @@ class AppTheme {
         backgroundColor: primaryColor,
         foregroundColor: AppColors.white,
         elevation:       4,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+              ? AppColors.white : AppColors.grey600,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+              ? primaryColor : AppColors.grey700,
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+              ? primaryColor : Colors.transparent,
+        ),
+        side: const BorderSide(color: AppColors.grey600, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
     );
   }

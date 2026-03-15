@@ -49,7 +49,7 @@ class _RoomListScreenState extends State<RoomListScreen> {
       child: Consumer<RoomListViewModel>(
         builder: (context, vm, _) {
           return Scaffold(
-            backgroundColor: context.bgColor,                  // ✅
+            backgroundColor: context.bgColor,
             body:            _buildBody(vm),
             floatingActionButton: FabAddButton(
               onPressed: () => AddTaskBottomSheet.show(
@@ -65,57 +65,51 @@ class _RoomListScreenState extends State<RoomListScreen> {
 
   Widget _buildBody(RoomListViewModel vm) {
     return NestedScrollView(
-      headerSliverBuilder: (context, _) => [
-        _buildSliverAppBar(vm),
-      ],
+      headerSliverBuilder: (context, _) => [_buildSliverAppBar(vm)],
       body: vm.isLoading
           ? const LoadingWidget(message: 'Đang tải danh sách phòng...')
           : _buildContent(vm),
     );
   }
 
-  // ── SliverAppBar ─────────────────────────────────────────────
   Widget _buildSliverAppBar(RoomListViewModel vm) {
     return SliverAppBar(
       pinned:          true,
-      backgroundColor: context.surfaceColor,                   // ✅
+      backgroundColor: context.surfaceColor,
       elevation:       0,
       expandedHeight:  0,
       leading: IconButton(
         icon: Icon(
           Icons.arrow_back_ios_new_rounded,
           size:  AppDimensions.iconMD,
-          color: context.textPrimary,                          // ✅
+          color: context.textPrimary,
         ),
         onPressed: () => context.go(AppRoutes.home),
       ),
       title: Text(
         'Danh sách theo phòng',
-        style: AppTextStyles.headlineSmall.copyWith(
-          color: context.textPrimary,                          // ✅
-        ),
+        style: AppTextStyles.headlineSmall.copyWith(color: context.textPrimary),
       ),
       actions: [
         IconButton(
-          icon: Icon(Icons.search_rounded, color: context.textPrimary),     // ✅
+          icon: Icon(Icons.search_rounded, color: context.textPrimary),
           onPressed: () {},
         ),
         IconButton(
-          icon: Icon(Icons.settings_outlined, color: context.textPrimary),  // ✅
+          icon: Icon(Icons.settings_outlined, color: context.textPrimary),
           onPressed: () => context.push(AppRoutes.settings),
         ),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: context.dividerColor),           // ✅
+        child: Container(height: 1, color: context.dividerColor),
       ),
     );
   }
 
-  // ── Main content ─────────────────────────────────────────────
   Widget _buildContent(RoomListViewModel vm) {
     return RefreshIndicator(
-      color:     AppColors.primary,
+      color:     Theme.of(context).colorScheme.primary, // FIX
       onRefresh: vm.refresh,
       child: CustomScrollView(
         slivers: [
@@ -123,10 +117,8 @@ class _RoomListScreenState extends State<RoomListScreen> {
             padding: const EdgeInsets.all(AppDimensions.screenPaddingH),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-
                 _buildSearchBar(vm),
                 const SizedBox(height: AppDimensions.spaceLG),
-
                 _buildZoneHeader(vm),
                 const SizedBox(height: AppDimensions.spaceLG),
 
@@ -134,9 +126,7 @@ class _RoomListScreenState extends State<RoomListScreen> {
                   EmptyStateWidget.noResults()
                 else
                   ...vm.filteredRooms.map((room) => Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: AppDimensions.spaceMD,
-                    ),
+                    padding: const EdgeInsets.only(bottom: AppDimensions.spaceMD),
                     child: RoomCard(
                       room:  room,
                       onTap: () => context.push(
@@ -146,7 +136,6 @@ class _RoomListScreenState extends State<RoomListScreen> {
                   )),
 
                 const SizedBox(height: AppDimensions.spaceLG),
-
                 _buildOverallSummary(vm),
                 const SizedBox(height: AppDimensions.space80),
               ]),
@@ -157,22 +146,16 @@ class _RoomListScreenState extends State<RoomListScreen> {
     );
   }
 
-  // ── Search bar ───────────────────────────────────────────────
   Widget _buildSearchBar(RoomListViewModel vm) {
     return TextField(
       controller: _searchController,
       onChanged:  vm.onSearch,
-      style: AppTextStyles.bodyMedium.copyWith(
-        color: context.textPrimary,                            // ✅
-      ),
+      style: AppTextStyles.bodyMedium.copyWith(color: context.textPrimary),
       decoration: InputDecoration(
         hintText:   AppStrings.hintSearchRoom,
         filled:     true,
-        fillColor:  context.cardColor,                         // ✅
-        prefixIcon: const Icon(
-          Icons.search_rounded,
-          color: AppColors.grey400,
-        ),
+        fillColor:  context.cardColor,
+        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.grey400),
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
           icon:      const Icon(Icons.clear_rounded),
@@ -186,8 +169,9 @@ class _RoomListScreenState extends State<RoomListScreen> {
     );
   }
 
-  // ── Zone header ──────────────────────────────────────────────
   Widget _buildZoneHeader(RoomListViewModel vm) {
+    final primary = Theme.of(context).colorScheme.primary; // FIX
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -196,48 +180,50 @@ class _RoomListScreenState extends State<RoomListScreen> {
           children: [
             Text(
               AppStrings.roomsZone,
-              style: AppTextStyles.titleLarge.copyWith(
-                color: context.textPrimary,                    // ✅
-              ),
+              style: AppTextStyles.titleLarge.copyWith(color: context.textPrimary),
             ),
             Text(
               AppStrings.roomsUntilTet,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.grey500,
-              ),
+              style: AppTextStyles.bodySmall,
             ),
           ],
         ),
+        // FIX: badge "N Phòng" theo theme
         Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.spaceMD,
             vertical:   AppDimensions.spaceXS,
           ),
           decoration: BoxDecoration(
-            color:        AppColors.primary.withValues(alpha: 0.1),
+            color:        primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
           ),
           child: Text(
             '${vm.filteredRooms.length} Phòng',
-            style: AppTextStyles.badgeText.copyWith(
-              color: AppColors.primary,
-            ),
+            style: AppTextStyles.badgeText.copyWith(color: primary),
           ),
         ),
       ],
     );
   }
 
-  // ── Overall summary ──────────────────────────────────────────
   Widget _buildOverallSummary(RoomListViewModel vm) {
     final percent = vm.totalTasks == 0
         ? 0
         : ((vm.completedTasks / vm.totalTasks) * 100).round();
 
+    // FIX: gradient tóm tắt theo theme
+    final primary      = Theme.of(context).colorScheme.primary;
+    final primaryDark  = Color.lerp(primary, Colors.black, 0.15)!;
+
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceXXL),
       decoration: BoxDecoration(
-        gradient:     AppColors.primaryGradient,               // gradient giữ nguyên
+        gradient: LinearGradient(
+          colors: [primary, primaryDark],
+          begin:  Alignment.topLeft,
+          end:    Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
       ),
       child: Column(
@@ -253,9 +239,7 @@ class _RoomListScreenState extends State<RoomListScreen> {
               const SizedBox(width: AppDimensions.spaceSM),
               Text(
                 AppStrings.overallSummary,
-                style: AppTextStyles.titleMedium.copyWith(
-                  color: AppColors.white,
-                ),
+                style: AppTextStyles.titleMedium.copyWith(color: AppColors.white),
               ),
             ],
           ),

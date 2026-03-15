@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 
 class QuickStatsRow extends StatelessWidget {
@@ -23,35 +25,35 @@ class QuickStatsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _StatCard(
-            icon:       Icons.today_outlined,
-            iconColor:  AppColors.accent,
-            bgColor:    AppColors.accent.withValues(alpha:0.1),
-            count:      todayCount,
-            label:      AppStrings.statToday,
-            subLabel:   AppStrings.taskNeedDone,
+            icon:      HugeIcons.strokeRoundedSun03,
+            iconColor: AppColors.accent,
+            bgColor:   AppColors.accent.withValues(alpha: 0.1),
+            count:     todayCount,
+            label:     AppStrings.statToday,
+            subLabel:  AppStrings.taskNeedDone,
           ),
         ),
         const SizedBox(width: AppDimensions.spaceMD),
         Expanded(
           child: _StatCard(
-            icon:       Icons.star_outline_rounded,
-            iconColor:  AppColors.secondary,
-            bgColor:    AppColors.secondary.withValues(alpha:0.1),
-            count:      highPriorityCount,
-            label:      AppStrings.statPriority,
-            subLabel:   AppStrings.taskHighPriority,
+            icon:      HugeIcons.strokeRoundedAlert01,
+            iconColor: AppColors.secondary,
+            bgColor:   AppColors.secondary.withValues(alpha: 0.1),
+            count:     highPriorityCount,
+            label:     AppStrings.statPriority,
+            subLabel:  AppStrings.taskHighPriority,
           ),
         ),
         const SizedBox(width: AppDimensions.spaceMD),
         Expanded(
           child: _StatCard(
-            icon:       Icons.warning_amber_rounded,
-            iconColor:  AppColors.statusOverdue,
-            bgColor:    AppColors.statusOverdue.withValues(alpha:0.1),
-            count:      overdueCount,
-            label:      AppStrings.statNearDue,
-            subLabel:   AppStrings.taskNearDeadline,
-            isAlert:    overdueCount > 0,
+            icon:      HugeIcons.strokeRoundedClock01,
+            iconColor: AppColors.statusOverdue,
+            bgColor:   AppColors.statusOverdue.withValues(alpha: 0.1),
+            count:     overdueCount,
+            label:     AppStrings.statNearDue,
+            subLabel:  AppStrings.taskNearDeadline,
+            isAlert:   overdueCount > 0,
           ),
         ),
       ],
@@ -60,7 +62,8 @@ class QuickStatsRow extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  final IconData icon;
+  // FIX: đúng type List<List<dynamic>>
+  final List<List<dynamic>> icon;
   final Color    iconColor;
   final Color    bgColor;
   final int      count;
@@ -83,18 +86,20 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceMD),
       decoration: BoxDecoration(
-        color:        AppColors.white,
+        color:        context.cardColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         boxShadow: [
           BoxShadow(
-            color:      AppColors.grey300.withValues(alpha:0.4),
+            color:      context.isDark
+                ? Colors.black26
+                : AppColors.grey300.withValues(alpha: 0.4),
             blurRadius: 8,
             offset:     const Offset(0, 2),
           ),
         ],
         border: isAlert
             ? Border.all(
-          color: AppColors.statusOverdue.withValues(alpha:0.3),
+          color: AppColors.statusOverdue.withValues(alpha: 0.3),
           width: 1,
         )
             : null,
@@ -102,30 +107,34 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Icon ────────────────────────────────────────────
           Container(
-            width:  36,
-            height: 36,
+            width:  38,
+            height: 38,
             decoration: BoxDecoration(
               color:        bgColor,
               borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
             ),
-            child: Icon(icon, color: iconColor, size: AppDimensions.iconMD),
+            child: Center(
+              child: HugeIcon(
+                icon:        icon,
+                color:       iconColor,
+                size:        20,
+                strokeWidth: 1.8,
+              ),
+            ),
           ),
           const SizedBox(height: AppDimensions.spaceMD),
 
-          // ── Count ────────────────────────────────────────────
           Text(
             count.toString().padLeft(2, '0'),
             style: AppTextStyles.statNumber.copyWith(
               color: isAlert && count > 0
                   ? AppColors.statusOverdue
-                  : AppColors.textPrimaryLight,
+                  : context.textPrimary,
             ),
           ),
           const SizedBox(height: AppDimensions.spaceXXS),
 
-          // ── Label ─────────────────────────────────────────────
           Text(
             label,
             style: AppTextStyles.statLabel,

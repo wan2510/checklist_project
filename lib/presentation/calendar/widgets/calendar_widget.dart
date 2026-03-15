@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../domain/entities/task.dart';
 import '../calendar_viewmodel.dart';
@@ -19,13 +20,20 @@ class CalendarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary      = Theme.of(context).colorScheme.primary;
+    final textPrimary  = context.textPrimary;
+    final cardColor    = context.cardColor;
+    final isDark       = context.isDark;
+
     return Container(
       decoration: BoxDecoration(
-        color:        AppColors.white,
+        color:        cardColor, // FIX: dark mode
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
         boxShadow: [
           BoxShadow(
-            color:      AppColors.grey300.withValues(alpha:0.3),
+            color:      isDark
+                ? Colors.black26
+                : AppColors.grey300.withValues(alpha: 0.3),
             blurRadius: 8,
             offset:     const Offset(0, 2),
           ),
@@ -38,114 +46,100 @@ class CalendarWidget extends StatelessWidget {
         selectedDayPredicate: (day) =>
         viewModel.selectedDay != null &&
             isSameDay(viewModel.selectedDay!, day),
-
-        // ── Events ──────────────────────────────────────────
-        eventLoader: viewModel.tasksForDay,
-
-        // ── Callbacks ───────────────────────────────────────
+        eventLoader:   viewModel.tasksForDay,
         onDaySelected: (selected, focused) {
           viewModel.selectDay(selected);
           onDaySelected?.call();
         },
         onPageChanged: viewModel.onPageChanged,
-
-        // ── Format ──────────────────────────────────────────
-        calendarFormat:   CalendarFormat.month,
-        availableCalendarFormats: const {
-          CalendarFormat.month: 'Tháng',
-        },
+        calendarFormat: CalendarFormat.month,
+        availableCalendarFormats: const { CalendarFormat.month: 'Tháng' },
         startingDayOfWeek: StartingDayOfWeek.monday,
         locale:            'vi_VN',
 
-        // ── Header style ────────────────────────────────────
+        // ── Header ──────────────────────────────────────────
         headerStyle: HeaderStyle(
-          formatButtonVisible:  false,
-          titleCentered:        true,
-          titleTextStyle:       AppTextStyles.titleLarge,
-          leftChevronIcon: const Icon(
+          formatButtonVisible: false,
+          titleCentered:       true,
+          titleTextStyle: AppTextStyles.titleLarge.copyWith(
+            color: textPrimary, // FIX: dark mode title
+          ),
+          leftChevronIcon: Icon(
             Icons.chevron_left_rounded,
-            color: AppColors.grey600,
+            color: textPrimary.withValues(alpha: 0.6), // FIX
           ),
-          rightChevronIcon: const Icon(
+          rightChevronIcon: Icon(
             Icons.chevron_right_rounded,
-            color: AppColors.grey600,
+            color: textPrimary.withValues(alpha: 0.6), // FIX
           ),
-          headerPadding: const EdgeInsets.symmetric(
-            vertical: AppDimensions.spaceMD,
-          ),
+          headerPadding: const EdgeInsets.symmetric(vertical: AppDimensions.spaceMD),
         ),
 
-        // ── Days of week ────────────────────────────────────
+        // ── Days of week ─────────────────────────────────────
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.grey500,
+            color: isDark ? AppColors.grey400 : AppColors.grey500, // FIX
           ),
           weekendStyle: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.statusOverdue.withValues(alpha:0.7),
+            color: AppColors.statusOverdue.withValues(alpha: 0.7),
           ),
         ),
 
-        // ── Calendar style ──────────────────────────────────
+        // ── Calendar style ────────────────────────────────────
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
           todayDecoration: BoxDecoration(
-            color:        AppColors.primary.withValues(alpha:0.15),
-            shape:        BoxShape.circle,
+            color: primary.withValues(alpha: 0.15), // FIX: theme
+            shape: BoxShape.circle,
           ),
           todayTextStyle: AppTextStyles.titleMedium.copyWith(
-            color: AppColors.primary,
+            color: primary, // FIX: theme
           ),
-          selectedDecoration: const BoxDecoration(
-            color:  AppColors.primary,
-            shape:  BoxShape.circle,
+          selectedDecoration: BoxDecoration(
+            color: primary, // FIX: theme
+            shape: BoxShape.circle,
           ),
           selectedTextStyle: AppTextStyles.titleMedium.copyWith(
             color: AppColors.white,
           ),
-          defaultTextStyle:  AppTextStyles.bodyMedium,
-          weekendTextStyle:  AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.statusOverdue.withValues(alpha:0.8),
+          defaultTextStyle: AppTextStyles.bodyMedium.copyWith(
+            color: textPrimary, // FIX: dark mode ngày thường
           ),
-          markerDecoration: const BoxDecoration(
-            color:  AppColors.primary,
-            shape:  BoxShape.circle,
+          weekendTextStyle: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.statusOverdue.withValues(alpha: 0.8),
           ),
-          markerSize:       6,
-          markersMaxCount:  3,
-          markerMargin: const EdgeInsets.symmetric(horizontal: 1),
-          cellMargin: const EdgeInsets.all(4),
+          outsideTextStyle: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.grey700 : AppColors.grey300,
+          ),
+          disabledTextStyle: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.grey700 : AppColors.grey300,
+          ),
+          markersMaxCount: 0,
         ),
 
-        // ── Custom marker builder ────────────────────────────
+        // ── Custom markers ────────────────────────────────────
         calendarBuilders: CalendarBuilders(
-          markerBuilder: (context, day, tasks) {
+          markerBuilder: (ctx, day, tasks) {
             if (tasks.isEmpty) return const SizedBox.shrink();
-            return _buildMarkers(day, tasks.cast<Task>());
+            return _buildMarkers(ctx, tasks.cast<Task>());
           },
         ),
       ),
     );
   }
 
-  Widget _buildMarkers(DateTime day, List<Task> tasks) {
-    final hasHigh = tasks.any(
-          (t) => t.priority.name == 'high',
-    );
-    final hasNormal = tasks.any(
-          (t) => t.priority.name != 'high',
-    );
+  Widget _buildMarkers(BuildContext context, List<Task> tasks) {
+    final primary   = Theme.of(context).colorScheme.primary;
+    final hasHigh   = tasks.any((t) => t.priority.name == 'high');
+    final hasNormal = tasks.any((t) => t.priority.name != 'high');
 
-    return Positioned(
-      bottom: 2,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (hasHigh)
-            _dot(AppColors.statusOverdue),
-          if (hasNormal)
-            _dot(AppColors.primary),
-        ],
-      ),
+    return Row(
+      mainAxisSize:      MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (hasHigh)   _dot(AppColors.statusOverdue),
+        if (hasNormal) _dot(primary), // FIX: theme
+      ],
     );
   }
 
@@ -153,9 +147,6 @@ class CalendarWidget extends StatelessWidget {
     width:  6,
     height: 6,
     margin: const EdgeInsets.symmetric(horizontal: 1),
-    decoration: BoxDecoration(
-      color: color,
-      shape: BoxShape.circle,
-    ),
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
   );
 }

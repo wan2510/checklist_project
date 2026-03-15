@@ -58,6 +58,22 @@ class _RoomDetailScreenState extends State<RoomDetailScreen>
   }
 
   @override
+  void didUpdateWidget(RoomDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Nếu GoRouter cấp VM mới hoặc đổi phòng → gọi init() trên VM mới
+    if (oldWidget.viewModel != widget.viewModel ||
+        oldWidget.roomType  != widget.roomType) {
+      // Reset tab về "Tất cả" khi đổi phòng
+      if (oldWidget.roomType != widget.roomType) {
+        _tabController.animateTo(0);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.viewModel.init(widget.roomType);
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
@@ -70,7 +86,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen>
       child: Consumer<RoomDetailViewModel>(
         builder: (context, vm, _) {
           return Scaffold(
-            backgroundColor: context.bgColor,                  // ✅
+            backgroundColor: context.bgColor,
             body:            _buildBody(vm),
             floatingActionButton: FabAddButton(
               onPressed: () => AddTaskBottomSheet.show(
@@ -98,28 +114,28 @@ class _RoomDetailScreenState extends State<RoomDetailScreen>
   Widget _buildSliverAppBar(RoomDetailViewModel vm) {
     return SliverAppBar(
       pinned:          true,
-      backgroundColor: context.surfaceColor,                   // ✅
+      backgroundColor: context.surfaceColor,
       elevation:       0,
       expandedHeight:  90,
       leading: IconButton(
         icon: Icon(
           Icons.arrow_back_ios_new_rounded,
           size:  AppDimensions.iconMD,
-          color: context.textPrimary,                          // ✅
+          color: context.textPrimary,
         ),
         onPressed: () => context.pop(),
       ),
       title: Text(
         widget.roomType.label,
         style: AppTextStyles.headlineSmall.copyWith(
-          color: context.textPrimary,                          // ✅
+          color: context.textPrimary,
         ),
       ),
       actions: [
         IconButton(
           icon: Icon(
             Icons.edit_outlined,
-            color: context.textPrimary,                        // ✅
+            color: context.textPrimary,
           ),
           onPressed: () {},
         ),
@@ -127,7 +143,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen>
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.pin,
         background: Container(
-          color: context.surfaceColor,                         // ✅
+          color: context.surfaceColor,
           padding: EdgeInsets.only(
             top:    MediaQuery.of(context).padding.top + 56,
             left:   AppDimensions.screenPaddingH,
@@ -144,7 +160,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen>
                   Text(
                     'TIẾN ĐỘ PHÒNG',
                     style: AppTextStyles.titleSmall.copyWith(
-                      color: context.textPrimary,              // ✅
+                      color: context.textPrimary,
                     ),
                   ),
                   Text(
@@ -166,9 +182,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen>
         preferredSize: const Size.fromHeight(48),
         child: Container(
           decoration: BoxDecoration(
-            color: context.surfaceColor,                       // ✅
+            color: context.surfaceColor,
             border: Border(
-              bottom: BorderSide(color: context.dividerColor), // ✅
+              bottom: BorderSide(color: context.dividerColor),
             ),
           ),
           child: Consumer<RoomDetailViewModel>(
@@ -270,7 +286,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen>
             child: Text(
               'DANH SÁCH (${vm.filteredTasks.length})',
               style: AppTextStyles.titleSmall.copyWith(
-                color: context.textPrimary,                    // ✅
+                color: context.textPrimary,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,

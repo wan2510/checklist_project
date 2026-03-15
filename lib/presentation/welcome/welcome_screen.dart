@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/tet_date_utils.dart';
 import '../../routes/app_routes.dart';
 import '../settings/settings_viewmodel.dart';
+import 'widgets/welcome_actions.dart';
+import 'widgets/welcome_app_icon.dart';
+import 'widgets/welcome_background.dart';
+import 'widgets/welcome_countdown_card.dart';
+import 'widgets/welcome_greeting.dart';
+import 'widgets/welcome_top_deco.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -17,36 +21,86 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
 
-  late AnimationController _controller;
-  late Animation<double>   _fadeAnim;
-  late Animation<Offset>   _slideAnim;
+  // ── Animation controllers ─────────────────────────────────────
+  late AnimationController _mainController;
+  late AnimationController _floatController;
+  late AnimationController _petalController;
+
+  // ── Animations ────────────────────────────────────────────────
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+  late Animation<double> _scaleAnim;
+  late Animation<double> _floatAnim;
+  late Animation<double> _cardSlideAnim;
+  late Animation<double> _btnAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _setupAnimations();
+  }
+
+  void _setupAnimations() {
+    // Entrance
+    _mainController = AnimationController(
       vsync:    this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1200),
     );
+
     _fadeAnim = CurvedAnimation(
-      parent: _controller,
-      curve:  Curves.easeIn,
+      parent: _mainController,
+      curve:  const Interval(0.0, 0.6, curve: Curves.easeOut),
     );
     _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.15),
+      begin: const Offset(0, 0.1),
       end:   Offset.zero,
     ).animate(CurvedAnimation(
-      parent: _controller,
-      curve:  Curves.easeOut,
+      parent: _mainController,
+      curve:  const Interval(0.0, 0.7, curve: Curves.easeOut),
     ));
-    _controller.forward();
+    _scaleAnim = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _mainController,
+        curve:  const Interval(0.1, 0.6, curve: Curves.elasticOut),
+      ),
+    );
+    _cardSlideAnim = Tween<double>(begin: 60.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _mainController,
+        curve:  const Interval(0.3, 0.8, curve: Curves.easeOut),
+      ),
+    );
+    _btnAnim = CurvedAnimation(
+      parent: _mainController,
+      curve:  const Interval(0.5, 1.0, curve: Curves.easeOut),
+    );
+
+    // Float (loop)
+    _floatController = AnimationController(
+      vsync:    this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat(reverse: true);
+
+    _floatAnim = Tween<double>(begin: -6.0, end: 6.0).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+    );
+
+    // Petals (loop)
+    _petalController = AnimationController(
+      vsync:    this,
+      duration: const Duration(seconds: 8),
+    )..repeat();
+
+    _mainController.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _mainController.dispose();
+    _floatController.dispose();
+    _petalController.dispose();
     super.dispose();
   }
 
@@ -60,257 +114,100 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   Widget build(BuildContext context) {
     final settings  = context.watch<SettingsViewModel>();
-    final name      = settings.displayName;
     final daysLeft  = TetDateUtils.daysUntilTet;
     final tetTitle  = TetDateUtils.tetFullTitle;
     final animal    = TetDateUtils.tetAnimal;
+    final progress  = TetDateUtils.timeElapsedPercent;
 
     return Scaffold(
-      body: Container(
-        width:  double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFFFF5F5),
-              Color(0xFFFFEBEB),
-              Color(0xFFFFF8E7),
-            ],
-            begin: Alignment.topLeft,
-            end:   Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SlideTransition(
-              position: _slideAnim,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.screenPaddingH,
-                ),
-                child: Column(
-                  children: [
-                    const Spacer(flex: 2),
-
-                    // ── Mascot / Icon ──────────────────────────
-                    Container(
-                      width:  100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient:     AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.radiusXXL,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color:      AppColors.primary.withValues(alpha: 0.35),
-                            blurRadius: 24,
-                            offset:     const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.cleaning_services_rounded,
-                        size:  52,
-                        color: AppColors.white,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.spaceXXL),
-
-                    // ── Greeting ───────────────────────────────
-                    Text(
-                      '${_greeting()},',
-                      style: AppTextStyles.titleLarge.copyWith(
-                        color: AppColors.grey500,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.spaceXS),
-
-                    // ── User name ──────────────────────────────
-                    Text(
-                      name,
-                      style: AppTextStyles.displayMedium.copyWith(
-                        color:      AppColors.primary,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.spaceMD),
-
-                    Text(
-                      'Sẵn sàng dọn nhà đón Tết chưa?',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.grey500,
-                      ),
-                    ),
-
-                    const Spacer(flex: 1),
-
-                    // ── Tet countdown card ─────────────────────
-                    _buildCountdownCard(tetTitle, animal, daysLeft),
-
-                    const Spacer(flex: 1),
-
-                    // ── Enter button ───────────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => context.go(AppRoutes.home),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppDimensions.spaceXL,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppDimensions.radiusLG,
-                            ),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Vào ứng dụng',
-                              style: AppTextStyles.titleLarge.copyWith(
-                                color: AppColors.white,
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.spaceSM),
-                            const Icon(
-                              Icons.arrow_forward_rounded,
-                              color: AppColors.white,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.spaceMD),
-
-                    // ── Skip / Settings ────────────────────────
-                    TextButton(
-                      onPressed: () => context.push(AppRoutes.settings),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.person_outline_rounded,
-                            size:  AppDimensions.iconSM,
-                            color: AppColors.grey400,
-                          ),
-                          const SizedBox(width: AppDimensions.spaceXS),
-                          Text(
-                            'Cài đặt tên người dùng',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.grey400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const Spacer(flex: 1),
-
-                    // ── Footer ─────────────────────────────────
-                    Text(
-                      '🏮  $tetTitle  🏮',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color:         AppColors.grey400,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.spaceLG),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCountdownCard(
-      String tetTitle,
-      String animal,
-      int daysLeft,
-      ) {
-    return Container(
-      width:   double.infinity,
-      padding: const EdgeInsets.all(AppDimensions.spaceXXL),
-      decoration: BoxDecoration(
-        gradient:     AppColors.bannerGradient,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color:      AppColors.primary.withOpacity(0.3),
-            blurRadius: 16,
-            offset:     const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
+      body: Stack(
         children: [
-          // ── Left ──────────────────────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Sẵn sàng đón',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color:      AppColors.white.withOpacity(0.85),
-                    fontWeight: FontWeight.w500,
+          // ── Background ───────────────────────────────────────
+          const WelcomeBackground(),
+
+          // ── Floating petals ──────────────────────────────────
+          WelcomeFloatingPetals(petalController: _petalController),
+
+          // ── Top flower decoration ────────────────────────────
+          const WelcomeTopDeco(),
+
+          // ── Red envelopes ────────────────────────────────────
+          WelcomeRedEnvelopes(floatAnim: _floatAnim),
+
+          // ── Main content ─────────────────────────────────────
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.screenPaddingH,
                   ),
-                ),
-                Text(
-                  tetTitle,
-                  style: AppTextStyles.titleLarge.copyWith(
-                    color:      AppColors.white,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.spaceSM),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Còn ',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.white.withOpacity(0.9),
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 2),
+
+                      WelcomeAppIcon(
+                        scaleAnim: _scaleAnim,
+                        floatAnim: _floatAnim,
                       ),
-                    ),
-                    Text(
-                      '$daysLeft',
-                      style: AppTextStyles.countdownNumber,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        ' Ngày',
-                        style: AppTextStyles.titleLarge.copyWith(
-                          color:      AppColors.white,
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(height: AppDimensions.spaceXXL),
+
+                      WelcomeGreeting(
+                        greeting: _greeting(),
+                        name:     settings.displayName,
+                      ),
+
+                      const Spacer(flex: 1),
+
+                      // Card slide-up animation
+                      AnimatedBuilder(
+                        animation: _cardSlideAnim,
+                        builder: (_, child) => Transform.translate(
+                          offset: Offset(0, _cardSlideAnim.value),
+                          child: Opacity(
+                            opacity: (1 - _cardSlideAnim.value / 60)
+                                .clamp(0.0, 1.0),
+                            child: child,
+                          ),
+                        ),
+                        child: WelcomeCountdownCard(
+                          tetTitle:        tetTitle,
+                          animal:          animal,
+                          daysLeft:        daysLeft,
+                          progressPercent: progress,
+                          floatAnim:       _floatAnim,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
 
-          // ── Right ─────────────────────────────────────────
-          Container(
-            width:  60,
-            height: 60,
-            decoration: BoxDecoration(
-              color:        AppColors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-            ),
-            child: Center(
-              child: Text(
-                animal,
-                style: const TextStyle(fontSize: 30),
+                      const Spacer(flex: 1),
+
+                      FadeTransition(
+                        opacity: _btnAnim,
+                        child: WelcomeCtaButton(
+                          onPressed: () => context.go(AppRoutes.home),
+                        ),
+                      ),
+                      const SizedBox(height: AppDimensions.spaceMD),
+
+                      FadeTransition(
+                        opacity: _btnAnim,
+                        child: WelcomeSettingsLink(
+                          onPressed: () => context.push(AppRoutes.settings),
+                        ),
+                      ),
+
+                      const Spacer(flex: 1),
+
+                      FadeTransition(
+                        opacity: _btnAnim,
+                        child: WelcomeFooter(tetTitle: tetTitle),
+                      ),
+                      const SizedBox(height: AppDimensions.spaceLG),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

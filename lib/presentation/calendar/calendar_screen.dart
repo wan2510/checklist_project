@@ -66,6 +66,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildSliverAppBar(CalendarViewModel vm) {
+    // FIX: lấy màu theme
+    final primary      = Theme.of(context).colorScheme.primary;
+    final primaryLight = Color.lerp(primary, Colors.white, 0.25)!;
+
     return SliverAppBar(
       pinned:          true,
       backgroundColor: context.surfaceColor,
@@ -73,11 +77,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
       titleSpacing:    AppDimensions.screenPaddingH,
       title: Row(
         children: [
+          // FIX: icon gradient theo theme
           Container(
             width:  32,
             height: 32,
             decoration: BoxDecoration(
-              gradient:     AppColors.primaryGradient,
+              gradient: LinearGradient(
+                colors: [primary, primaryLight],
+                begin:  Alignment.topLeft,
+                end:    Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
             ),
             child: const Icon(
@@ -105,7 +114,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               vertical:   AppDimensions.spaceXS,
             ),
             decoration: BoxDecoration(
-              color:        AppColors.primary.withValues(alpha: 0.1),
+              // FIX: tint nền + màu text/icon theo theme
+              color:        primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
             ),
             child: Row(
@@ -116,14 +126,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ? Icons.calendar_month_outlined
                       : Icons.view_agenda_outlined,
                   size:  AppDimensions.iconSM,
-                  color: AppColors.primary,
+                  color: primary,
                 ),
                 const SizedBox(width: AppDimensions.spaceXS),
                 Text(
                   vm.isAgendaView ? 'Tháng' : 'Agenda',
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: AppColors.primary,
-                  ),
+                  style: AppTextStyles.labelMedium.copyWith(color: primary),
                 ),
               ],
             ),
@@ -223,6 +231,7 @@ class _AgendaGroup extends StatelessWidget {
     final isToday = date.year  == now.year  &&
         date.month == now.month &&
         date.day   == now.day;
+    final primary = Theme.of(context).colorScheme.primary; // FIX
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,22 +240,19 @@ class _AgendaGroup extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppDimensions.spaceMD),
           child: Row(
             children: [
+              // FIX: "hôm nay" box theo theme
               Container(
                 width:  36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: isToday
-                      ? AppColors.primary
-                      : context.cardColor,
+                  color: isToday ? primary : context.cardColor,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
                 ),
                 child: Center(
                   child: Text(
                     '${date.day}',
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: isToday
-                          ? AppColors.white
-                          : context.textPrimary,
+                      color: isToday ? AppColors.white : context.textPrimary,
                     ),
                   ),
                 ),
@@ -258,28 +264,26 @@ class _AgendaGroup extends StatelessWidget {
                   Text(
                     _weekday(date.weekday),
                     style: AppTextStyles.titleSmall.copyWith(
-                      color: isToday
-                          ? AppColors.primary
-                          : context.textPrimary,
+                      // FIX: weekday màu theme khi là hôm nay
+                      color: isToday ? primary : context.textPrimary,
                     ),
                   ),
                   Text(
                     'Tháng ${date.month}, ${date.year}',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.grey500,
-                    ),
+                    style: AppTextStyles.bodySmall,
                   ),
                 ],
               ),
               if (isToday) ...[
                 const SizedBox(width: AppDimensions.spaceSM),
+                // FIX: "Hôm nay" pill theo theme
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppDimensions.spaceSM,
                     vertical:   2,
                   ),
                   decoration: BoxDecoration(
-                    color:        AppColors.primary,
+                    color:        primary,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
                   ),
                   child: Text(
@@ -332,10 +336,7 @@ class _AgendaTaskItem extends StatelessWidget {
           color:        context.cardColor,
           borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
           border: Border(
-            left: BorderSide(
-              color: task.priority.color,
-              width: 3,
-            ),
+            left: BorderSide(color: task.priority.color, width: 3),
           ),
           boxShadow: [
             BoxShadow(
@@ -369,9 +370,7 @@ class _AgendaTaskItem extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     task.roomType.label,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.grey500,
-                    ),
+                    style: AppTextStyles.bodySmall,
                   ),
                 ],
               ),
