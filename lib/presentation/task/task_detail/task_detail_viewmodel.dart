@@ -36,9 +36,7 @@ class TaskDetailViewModel extends ChangeNotifier {
   String        _description       = '';
   RoomType      _roomType          = RoomType.livingRoom;
   PriorityLevel _priority          = PriorityLevel.medium;
-  DateTime      _deadline          = DateTime.now()
-      .toUtc()
-      .add(const Duration(hours: 7, days: 1));
+  DateTime      _deadline          = DateTime.now().add(const Duration(days: 1));
   int           _progressPercent   = 0;
   bool          _isReminderEnabled = false;
   DateTime?     _reminderTime;
@@ -95,9 +93,7 @@ class TaskDetailViewModel extends ChangeNotifier {
     _description     = '';
     _roomType        = RoomType.livingRoom;
     _priority        = PriorityLevel.medium;
-    _deadline        = DateTime.now()
-        .toUtc()
-        .add(const Duration(hours: 7, days: 1));
+    _deadline        = DateTime.now().add(const Duration(days: 1));
     _progressPercent   = 0;
     _isReminderEnabled = false;
     _reminderTime      = null;
@@ -145,7 +141,7 @@ class TaskDetailViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+      final now = DateTime.now();
 
       if (isEditMode) {
         final updated = _originalTask!.copyWith(

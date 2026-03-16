@@ -2,11 +2,11 @@ import 'package:intl/intl.dart';
 
 extension DateTimeExtensions on DateTime {
   /// Múi giờ Việt Nam GMT+7
-  static final _vnTimeZoneOffset = const Duration(hours: 7);
+  // Removed: Flutter uses device local timezone automatically
 
   /// Thời điểm hiện tại theo giờ VN
   static DateTime get nowVN =>
-      DateTime.now().toUtc().add(_vnTimeZoneOffset);
+      DateTime.now();
 
   // ── Boolean checks ───────────────────────────────────────────
 

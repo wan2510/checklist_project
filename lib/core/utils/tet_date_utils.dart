@@ -31,7 +31,7 @@ class TetDateUtils {
 
   /// Lấy DateTime Tết sắp tới (chưa qua)
   static DateTime get nextTetDate {
-    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
     // Tìm Tết gần nhất chưa qua
@@ -60,7 +60,7 @@ class TetDateUtils {
       '${tetName} ${nextTetYear} ${tetAnimal}';
 
   static int get daysUntilTet {
-    final now   = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now   = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tet   = nextTetDate;
     final diff  = tet.difference(today).inDays;
@@ -77,7 +77,7 @@ class TetDateUtils {
   }
 
   static double get timeElapsedPercent {
-    final now       = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now       = DateTime.now();
     final prevTet   = DateTime(nextTetYear - 1, 2, 1);
     final total     = nextTetDate.difference(prevTet).inDays.toDouble();
     final elapsed   = now.difference(prevTet).inDays.toDouble();

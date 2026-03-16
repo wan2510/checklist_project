@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/enums/priority_level.dart';
@@ -49,6 +50,7 @@ class AllTasksViewModel extends ChangeNotifier {
   TaskSortOption  _sortOption   = TaskSortOption.deadline;
   String          _searchQuery  = '';
   bool            _isLoading    = true;
+  Timer?          _searchDebounce; // FIX: debounce ngăn IME interrupt
   bool            _isSearching  = false;
   String?         _error;
 
@@ -75,7 +77,7 @@ class AllTasksViewModel extends ChangeNotifier {
   }
 
   String _groupKey(DateTime dt) {
-    final now      = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now      = DateTime.now();
     final today    = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
     final taskDay  = DateTime(dt.year, dt.month, dt.day);
@@ -152,26 +154,32 @@ class AllTasksViewModel extends ChangeNotifier {
   }
 
   // ── Search ────────────────────────────────────────────────────
-  Future<void> onSearch(String query) async {
+  // FIX: debounce 350ms — không gọi search ngay sau mỗi keystroke
+  // Tránh notifyListeners giữa chừng khi IME đang compose tiếng Việt
+  void onSearch(String query) {
     _searchQuery = query;
+    _searchDebounce?.cancel();
 
     if (query.isEmpty) {
       _isSearching = false;
-      await setFilter(_activeFilter);
+      setFilter(_activeFilter);
       return;
     }
 
     _isSearching = true;
     notifyListeners();
 
-    try {
-      _displayList = await _searchTasks(query);
-      _sortList(_displayList);
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      notifyListeners();
-    }
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () async {
+      if (!_isSearching) return;
+      try {
+        _displayList = await _searchTasks(_searchQuery);
+        _sortList(_displayList);
+      } catch (e) {
+        _error = e.toString();
+      } finally {
+        notifyListeners();
+      }
+    });
   }
 
   // ── Apply filter + sort ───────────────────────────────────────
@@ -212,6 +220,12 @@ class AllTasksViewModel extends ChangeNotifier {
   }
 
   Future<void> refresh() => init();
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel(); // FIX: cleanup debounce timer
+    super.dispose();
+  }
 
   String sortLabel(TaskSortOption opt) {
     switch (opt) {

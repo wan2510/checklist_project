@@ -15,13 +15,13 @@ class ToggleTaskCompleteUseCase extends UseCase<void, Task> {
         ? params.copyWith(
       status:          TaskStatus.pending,
       progressPercent: 0,
-      updatedAt:       DateTime.now().toUtc().add(const Duration(hours: 7)),
+      updatedAt:       DateTime.now(),
     )
     // Nếu chưa done → mark done
         : params.copyWith(
       status:          TaskStatus.done,
       progressPercent: 100,
-      updatedAt:       DateTime.now().toUtc().add(const Duration(hours: 7)),
+      updatedAt:       DateTime.now(),
     );
 
     return _repository.updateTask(updatedTask);

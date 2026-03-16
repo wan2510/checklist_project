@@ -42,19 +42,19 @@ class Task extends Equatable {
 
   bool get isOverdue {
     if (isCompleted) return false;
-    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now = DateTime.now();
     return deadline.isBefore(now);
   }
 
   bool get isToday {
-    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now = DateTime.now();
     return deadline.year  == now.year  &&
         deadline.month == now.month &&
         deadline.day   == now.day;
   }
 
   bool get isThisWeek {
-    final now       = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now       = DateTime.now();
     final startWeek = now.subtract(Duration(days: now.weekday - 1));
     final endWeek   = startWeek.add(const Duration(days: 6));
     return deadline.isAfter(startWeek.subtract(const Duration(days: 1))) &&

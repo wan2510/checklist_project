@@ -17,7 +17,7 @@ class CalendarViewModel extends ChangeNotifier {
 
   // ── State ─────────────────────────────────────────────────────
   DateTime          _focusedDay    = DateTime.now()
-      .toUtc().add(const Duration(hours: 7));
+  ;
   DateTime?         _selectedDay;
   List<Task>        _selectedTasks = [];
   Map<String, List<Task>> _taskMap = {}; // key: "yyyy-MM-dd"
@@ -51,7 +51,7 @@ class CalendarViewModel extends ChangeNotifier {
 
   /// Agenda: tất cả tasks sắp tới (từ hôm nay)
   List<MapEntry<DateTime, List<Task>>> get agendaEntries {
-    final now    = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now    = DateTime.now();
     final today  = DateTime(now.year, now.month, now.day);
 
     return _taskMap.entries

@@ -49,7 +49,8 @@ class _RoomListScreenState extends State<RoomListScreen> {
       child: Consumer<RoomListViewModel>(
         builder: (context, vm, _) {
           return Scaffold(
-            backgroundColor: context.bgColor,
+            backgroundColor:          context.bgColor,
+            resizeToAvoidBottomInset: false,
             body:            _buildBody(vm),
             floatingActionButton: FabAddButton(
               onPressed: () => AddTaskBottomSheet.show(

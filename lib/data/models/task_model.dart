@@ -18,14 +18,14 @@ class TaskModel {
       priority:          PriorityLevel.fromString(e.priority),
       status:            TaskStatus.fromString(e.status),
       progressPercent:   e.progressPercent,
-      deadline:          DateTime.fromMillisecondsSinceEpoch(e.deadline),
+      deadline:          DateTime.fromMillisecondsSinceEpoch(e.deadline).toLocal(),
       reminderTime:      e.reminderTime != null
-          ? DateTime.fromMillisecondsSinceEpoch(e.reminderTime!)
+          ? DateTime.fromMillisecondsSinceEpoch(e.reminderTime!).toLocal()
           : null,
       isReminderEnabled: e.isReminderEnabled == 1,
       note:              e.note,
-      createdAt:         DateTime.fromMillisecondsSinceEpoch(e.createdAt),
-      updatedAt:         DateTime.fromMillisecondsSinceEpoch(e.updatedAt),
+      createdAt:         DateTime.fromMillisecondsSinceEpoch(e.createdAt).toLocal(),
+      updatedAt:         DateTime.fromMillisecondsSinceEpoch(e.updatedAt).toLocal(),
     );
   }
 

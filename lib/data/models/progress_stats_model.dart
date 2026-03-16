@@ -9,15 +9,18 @@ class ProgressStatsModel {
 
   static ProgressStats fromTaskEntities(List<TaskEntity> tasks) {
     final nowMs = DateTime.now()
-        .toUtc()
-        .add(const Duration(hours: 7))
+
         .millisecondsSinceEpoch;
 
-    final total      = tasks.length;
-    final completed  = tasks.where((t) => t.status == 'done').length;
-    final inProgress = tasks.where((t) => t.status == 'inProgress').length;
-    final overdue    = tasks
+    final total         = tasks.length;
+    final completed     = tasks.where((t) => t.status == 'done').length;
+    final inProgress    = tasks.where((t) => t.status == 'inProgress').length;
+    final overdue       = tasks
         .where((t) => t.status != 'done' && t.deadline < nowMs)
+        .length;
+    // FIX: tính số task ưu tiên cao chưa hoàn thành
+    final highPriority  = tasks
+        .where((t) => t.priority == 'high' && t.status != 'done')
         .length;
 
     // ── Room stats ─────────────────────────────────────────────
@@ -42,7 +45,7 @@ class ProgressStatsModel {
 
     // ── Weekly completed (7 ngày gần nhất) ────────────────────
     final weeklyCompleted = <String, int>{};
-    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now = DateTime.now();
 
     for (int i = 6; i >= 0; i--) {
       final day      = now.subtract(Duration(days: i));
@@ -62,12 +65,12 @@ class ProgressStatsModel {
     }
 
     return ProgressStats(
-      totalTasks:      total,
-      completedTasks:  completed,
-      inProgressTasks: inProgress,
-      overdueTasks:    overdue,
-      roomStats:       roomStats,
-      weeklyCompleted: weeklyCompleted,
+      totalTasks:        total,
+      completedTasks:    completed,
+      inProgressTasks:   inProgress,
+      overdueTasks:      overdue,
+      roomStats:         roomStats,
+      weeklyCompleted:   weeklyCompleted,
     );
   }
 }

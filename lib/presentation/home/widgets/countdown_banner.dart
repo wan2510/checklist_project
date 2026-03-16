@@ -16,9 +16,10 @@ class CountdownBanner extends StatelessWidget {
     final animal   = TetDateUtils.tetAnimal;
     final progress = TetDateUtils.timeElapsedPercent;
 
-    // FIX: Lấy màu chủ đề hiện tại thay vì hardcode đỏ
-    final primary      = Theme.of(context).colorScheme.primary;
-    final primaryLight = Color.lerp(primary, Colors.white, 0.25)!;
+    // FIX: dùng theme primary, tạo 3 điểm gradient đậm → vừa → tối
+    final primary     = Theme.of(context).colorScheme.primary;
+    final primaryDark = Color.lerp(primary, Colors.black, 0.30)!;   // 30% tối hơn
+    final primaryMid  = Color.lerp(primary, Colors.black, 0.10)!;   // 10% tối hơn
 
     return Container(
       width: double.infinity,
@@ -26,9 +27,10 @@ class CountdownBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
         boxShadow: [
           BoxShadow(
-            color:        primary.withValues(alpha: 0.35),
-            blurRadius:   20,
-            offset:       const Offset(0, 8),
+            // FIX: shadow đậm hơn
+            color:        primary.withValues(alpha: 0.55),
+            blurRadius:   24,
+            offset:       const Offset(0, 10),
             spreadRadius: -2,
           ),
         ],
@@ -37,27 +39,46 @@ class CountdownBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
         child: Stack(
           children: [
-            // ── Gradient background (theo theme) ────────────────
+            // ── Gradient background — 3 điểm đậm hơn ─────────
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [primary, primaryLight],
+                  colors: [primaryDark, primary, primaryMid],
+                  stops:  const [0.0, 0.55, 1.0],
                   begin:  Alignment.topLeft,
                   end:    Alignment.bottomRight,
                 ),
               ),
             ),
 
-            // ── Decorative circles ───────────────────────────────
+            // ── Lớp overlay tối ở góc dưới phải ──────────────
+            // FIX: thêm overlay để không bị "trắng bệch"
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.18),
+                    ],
+                    begin: Alignment.topLeft,
+                    end:   Alignment.bottomRight,
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Decorative circles — tăng opacity ────────────
             Positioned(
               top:   -30,
               right: -20,
               child: Container(
-                width:  120,
-                height: 120,
+                width:  130,
+                height: 130,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.07),
+                  // FIX: 0.07 → 0.18
+                  color: Colors.white.withValues(alpha: 0.18),
                 ),
               ),
             ),
@@ -65,25 +86,39 @@ class CountdownBanner extends StatelessWidget {
               bottom: -40,
               left:   -20,
               child: Container(
-                width:  140,
-                height: 140,
+                width:  150,
+                height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.05),
+                  // FIX: 0.05 → 0.12
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+            ),
+            // FIX: thêm circle thứ 3 ở giữa phải
+            Positioned(
+              top:   60,
+              right: -30,
+              child: Container(
+                width:  90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.08),
                 ),
               ),
             ),
 
-            // ── Confetti dots ─────────────────────────────────────
+            // ── Confetti dots ─────────────────────────────────
             Positioned(
               bottom: 14,
               right:  80,
               child: Container(
-                width:  6,
-                height: 6,
+                width: 7, height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFF2C94C).withValues(alpha: 0.6),
+                  // FIX: 0.6 → 0.85
+                  color: const Color(0xFFF2C94C).withValues(alpha: 0.85),
                 ),
               ),
             ),
@@ -91,72 +126,81 @@ class CountdownBanner extends StatelessWidget {
               top:   18,
               right: 130,
               child: Container(
-                width:  4,
-                height: 4,
+                width: 5, height: 5,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.4),
+                  // FIX: 0.4 → 0.65
+                  color: Colors.white.withValues(alpha: 0.65),
+                ),
+              ),
+            ),
+            // FIX: thêm dot thứ 3
+            Positioned(
+              top:  45,
+              left: 80,
+              child: Container(
+                width: 4, height: 4,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ),
 
-            // ── Content ──────────────────────────────────────────
+            // ── Content ───────────────────────────────────────
             Padding(
               padding: const EdgeInsets.all(AppDimensions.spaceXXL),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // ── Top row: badge + animal ─────────────────
+                  // ── Top row: badge + animal ──────────────────
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical:   3,
-                        ),
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color:        Colors.white.withValues(alpha: 0.2),
+                          // FIX: 0.2 → 0.28
+                          color:        Colors.white.withValues(alpha: 0.28),
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 0.5,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.cleaning_services_rounded,
-                              size:  11,
-                              color: Colors.white,
-                            ),
+                            const Icon(Icons.cleaning_services_rounded,
+                                size: 11, color: Colors.white),
                             const SizedBox(width: 4),
-                            Text(
+                            const Text(
                               'Sẵn sàng đón Tết',
                               style: TextStyle(
-                                color:      Colors.white.withValues(alpha: 0.9),
+                                color:      Colors.white,
                                 fontSize:   10,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ),
                       ),
                       const Spacer(),
-                      // Animal icon
                       Container(
-                        width:  46,
-                        height: 46,
+                        width: 46, height: 46,
                         decoration: BoxDecoration(
-                          color:        Colors.white.withValues(alpha: 0.15),
+                          // FIX: 0.15 → 0.25
+                          color:        Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: Colors.white.withValues(alpha: 0.45),
                             width: 1,
                           ),
                         ),
                         child: Center(
-                          child: Text(
-                            animal,
-                            style: const TextStyle(fontSize: 24),
-                          ),
+                          child: Text(animal,
+                              style: const TextStyle(fontSize: 24)),
                         ),
                       ),
                     ],
@@ -164,7 +208,6 @@ class CountdownBanner extends StatelessWidget {
 
                   const SizedBox(height: AppDimensions.spaceSM),
 
-                  // ── Tet title ─────────────────────────────────
                   Text(
                     tetTitle,
                     style: const TextStyle(
@@ -172,23 +215,24 @@ class CountdownBanner extends StatelessWidget {
                       fontSize:      16,
                       fontWeight:    FontWeight.w800,
                       letterSpacing: -0.3,
+                      // FIX: thêm shadow nhẹ cho chữ
+                      shadows: [
+                        Shadow(
+                          color:  Colors.black26,
+                          offset: Offset(0, 1),
+                          blurRadius: 3,
+                        ),
+                      ],
                     ),
                   ),
 
                   const SizedBox(height: AppDimensions.spaceSM),
 
-                  // ── Countdown number ──────────────────────────
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        'Còn ',
-                        style: AppTextStyles.countdownLabel,
-                      ),
-                      Text(
-                        '$daysLeft',
-                        style: AppTextStyles.countdownNumber,
-                      ),
+                      Text('Còn ', style: AppTextStyles.countdownLabel),
+                      Text('$daysLeft', style: AppTextStyles.countdownNumber),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
@@ -204,7 +248,6 @@ class CountdownBanner extends StatelessWidget {
 
                   const SizedBox(height: AppDimensions.spaceMD),
 
-                  // ── Progress bar ──────────────────────────────
                   Row(
                     children: [
                       Expanded(
@@ -212,11 +255,9 @@ class CountdownBanner extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value:           progress,
-                            minHeight:       4,
-                            backgroundColor: Colors.white.withValues(alpha: 0.25),
-                            valueColor: const AlwaysStoppedAnimation(
-                              Colors.white,
-                            ),
+                            minHeight:       5, // FIX: dày hơn
+                            backgroundColor: Colors.white.withValues(alpha: 0.30),
+                            valueColor: const AlwaysStoppedAnimation(Colors.white),
                           ),
                         ),
                       ),
@@ -224,8 +265,9 @@ class CountdownBanner extends StatelessWidget {
                       Text(
                         '${(progress * 100).round()}% Năm cũ',
                         style: TextStyle(
-                          color:    Colors.white.withValues(alpha: 0.75),
-                          fontSize: 10,
+                          color:      Colors.white.withValues(alpha: 0.90),
+                          fontSize:   10,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],

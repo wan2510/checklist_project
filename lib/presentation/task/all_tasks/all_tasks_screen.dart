@@ -51,7 +51,8 @@ class _AllTasksScreenState extends State<AllTasksScreen> {
       value: widget.viewModel,
       child: Consumer<AllTasksViewModel>(
         builder: (_, vm, __) => Scaffold(
-          backgroundColor: context.bgColor,
+          backgroundColor:          context.bgColor,
+          resizeToAvoidBottomInset: false, // FIX: IME tiếng Việt
           body:            _buildBody(vm),
           floatingActionButton: FabAddButton(
             onPressed: () => AddTaskBottomSheet.show(

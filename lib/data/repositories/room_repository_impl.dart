@@ -24,8 +24,6 @@ class RoomRepositoryImpl implements RoomRepository {
       final allTasks = await _taskDao.getAllTasks();
       debugPrint('>>> getAllRooms: got ${allTasks.length} tasks');
       final nowMs = DateTime.now()
-          .toUtc()
-          .add(const Duration(hours: 7))
           .millisecondsSinceEpoch;
 
       final rooms = RoomType.values.map((type) {

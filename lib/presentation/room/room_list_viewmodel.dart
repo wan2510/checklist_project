@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/room.dart';
@@ -19,6 +20,7 @@ class RoomListViewModel extends ChangeNotifier {
   bool       _isLoading    = false;
   String?    _error;
   String     _searchQuery  = '';
+  Timer?     _searchDebounce;
 
   // ── Getters ──────────────────────────────────────────────────
   bool    get isLoading => _isLoading;
@@ -55,10 +57,20 @@ class RoomListViewModel extends ChangeNotifier {
   }
 
   // ── Search ───────────────────────────────────────────────────
+  // FIX: debounce 350ms tránh IME tiếng Việt bị ngắt
   void onSearch(String query) {
     _searchQuery = query;
-    notifyListeners();
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      notifyListeners();
+    });
   }
 
   Future<void> refresh() => init();
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/extensions/context_extensions.dart';
@@ -20,7 +21,33 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with SingleTickerProviderStateMixin {
+
+  // ── Theme reveal animation ────────────────────────────────────
+  late final AnimationController _revealCtrl;
+  late final Animation<double>   _revealAnim;
+  bool       _isAnimating = false;
+  bool       _revealDark  = false; // hướng: true=tối đi xuống, false=sáng đi lên
+  ThemeData? _targetTheme;         // theme đích để render layer trên
+
+  void _handleDarkModeToggle(bool newValue) {
+    final vm = context.read<SettingsViewModel>();
+    final targetTheme = newValue
+        ? AppTheme.darkTheme(vm.themeColor)
+        : AppTheme.lightTheme(vm.themeColor);
+
+    setState(() {
+      _isAnimating = true;
+      _revealDark  = newValue;
+      _targetTheme = targetTheme;
+    });
+
+    _revealCtrl.forward(from: 0).then((_) {
+      vm.setDarkMode(newValue);           // đổi theme thật
+      setState(() => _isAnimating = false);
+    });
+  }
 
   Future<void> _showEditNameDialog(SettingsViewModel vm) async {
     final controller = TextEditingController(text: vm.userName);
@@ -93,9 +120,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _revealCtrl = AnimationController(
+      vsync:    this,
+      duration: const Duration(milliseconds: 2000),
+    );
+    _revealAnim = CurvedAnimation(
+      parent: _revealCtrl,
+      curve:  Curves.easeInOut,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.viewModel.init();
     });
+  }
+
+  @override
+  void dispose() {
+    _revealCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -103,10 +144,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ChangeNotifierProvider.value(
       value: widget.viewModel,
       child: Consumer<SettingsViewModel>(
-        builder: (_, vm, __) => Scaffold(
-          backgroundColor: context.bgColor,                    // ✅
-          body:            _buildBody(vm),
-        ),
+        builder: (_, vm, __) {
+          // Scaffold đầy đủ với theme hiện tại
+          final currentScaffold = Scaffold(
+            backgroundColor: context.bgColor,
+            body: _buildBody(vm),
+          );
+
+          // Không animate → render bình thường
+          if (!_isAnimating || _targetTheme == null) {
+            return currentScaffold;
+          }
+
+          // ── Đang animate: 2 layer Scaffold chồng nhau ────────
+          // Layer 1: TOÀN BỘ Scaffold với theme hiện tại (đứng yên)
+          // Layer 2: TOÀN BỘ Scaffold với theme mới, bị clip dần
+          // → nền ngoài, AppBar, mọi thứ đều tham gia animation
+          return Stack(
+            children: [
+              // Layer 1 — theme cũ, full screen, đứng yên
+              currentScaffold,
+
+              // Layer 2 — theme mới, clip dần theo hướng
+              AnimatedBuilder(
+                animation: _revealAnim,
+                builder: (_, __) => ClipRect(
+                  clipper: _DirectionalClipper(
+                    progress: _revealAnim.value,
+                    fromTop:  _revealDark,
+                  ),
+                  // Theme bọc TOÀN BỘ Scaffold — không chỉ body
+                  child: Theme(
+                    data: _targetTheme!,
+                    child: Scaffold(
+                      backgroundColor:
+                      _targetTheme!.scaffoldBackgroundColor,
+                      body: _buildBody(vm),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -199,7 +279,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title:       AppStrings.settingsDarkMode,
                   subtitle:    AppStrings.settingsDarkModeSub,
                   value:       vm.isDarkMode,
-                  onChanged:   vm.setDarkMode,
+                  onChanged:   _handleDarkModeToggle,
                 ),
                 ColorPickerRow(
                   selected:  vm.themeColor,
@@ -559,4 +639,34 @@ class _ComingSoonSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Directional reveal clipper ────────────────────────────────────
+// fromTop=true  → clip mở rộng từ trên xuống (chế độ tối bao xuống)
+// fromTop=false → clip mở rộng từ dưới lên  (chế độ sáng bao lên)
+class _DirectionalClipper extends CustomClipper<Rect> {
+  final double progress; // 0.0 → 1.0
+  final bool   fromTop;
+
+  const _DirectionalClipper({
+    required this.progress,
+    required this.fromTop,
+  });
+
+  @override
+  Rect getClip(Size size) {
+    final revealH = size.height * progress;
+    if (fromTop) {
+      // Bắt đầu từ đỉnh, ăn dần xuống
+      return Rect.fromLTWH(0, 0, size.width, revealH);
+    } else {
+      // Bắt đầu từ đáy, ăn dần lên
+      return Rect.fromLTWH(
+          0, size.height - revealH, size.width, revealH);
+    }
+  }
+
+  @override
+  bool shouldReclip(_DirectionalClipper old) =>
+      old.progress != progress || old.fromTop != fromTop;
 }

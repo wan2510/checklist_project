@@ -227,7 +227,7 @@ class _AgendaGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now     = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now     = DateTime.now();
     final isToday = date.year  == now.year  &&
         date.month == now.month &&
         date.day   == now.day;

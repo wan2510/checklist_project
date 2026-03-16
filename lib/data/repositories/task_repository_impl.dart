@@ -14,8 +14,7 @@ class TaskRepositoryImpl implements TaskRepository {
 
   // ── Helper: now VN milliseconds ──────────────────────────────
   int get _nowMs => DateTime.now()
-      .toUtc()
-      .add(const Duration(hours: 7))
+
       .millisecondsSinceEpoch;
 
   // ── Read ─────────────────────────────────────────────────────
@@ -59,13 +58,13 @@ class TaskRepositoryImpl implements TaskRepository {
 
   @override
   Future<List<Task>> getTodayTasks() {
-    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now = DateTime.now();
     return getTasksByDate(now);
   }
 
   @override
   Future<List<Task>> getThisWeekTasks() async {
-    final now       = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final now       = DateTime.now();
     final startWeek = DateTime(now.year, now.month, now.day)
         .subtract(Duration(days: now.weekday - 1));
     final endWeek   = startWeek.add(const Duration(days: 7));
@@ -108,8 +107,8 @@ class TaskRepositoryImpl implements TaskRepository {
   Future<void> addTask(Task task) async {
     final taskWithId = task.copyWith(
       id:        _uuid.v4(),
-      createdAt: DateTime.now().toUtc().add(const Duration(hours: 7)),
-      updatedAt: DateTime.now().toUtc().add(const Duration(hours: 7)),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
     await _taskDao.insertTask(TaskModel.toEntity(taskWithId));
   }
@@ -117,7 +116,7 @@ class TaskRepositoryImpl implements TaskRepository {
   @override
   Future<void> updateTask(Task task) async {
     final updated = task.copyWith(
-      updatedAt: DateTime.now().toUtc().add(const Duration(hours: 7)),
+      updatedAt: DateTime.now(),
     );
     await _taskDao.updateTask(TaskModel.toEntity(updated));
   }
