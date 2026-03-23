@@ -144,16 +144,15 @@ class _HomeScreenState extends State<HomeScreen>
                         // ── Khám phá ────────────────────────
                         _buildSectionRow(title: AppStrings.explore),
                         const SizedBox(height: AppDimensions.spaceLG),
-                        ExploreGrid(
-                          onRoomList: () => context.go(AppRoutes.roomList),
-                          onAllTasks: () => context.go(AppRoutes.allTasks),
-                          onCalendar: () => context.go(AppRoutes.calendar),
-                          onReport:   () => context.go(AppRoutes.report),
-                        ),
+                        _buildExploreWithDeco(vm),
                         const SizedBox(height: AppDimensions.spaceXXL),
 
                         // ── Câu quote Tết ──────────────────
                         _buildQuoteCard(vm),
+                        const SizedBox(height: AppDimensions.spaceLG),
+
+                        // ── Tips Tết nhỏ ───────────────────
+                        _buildTetTipsRow(),
                         const SizedBox(height: AppDimensions.space80),
                       ],
                     ),
@@ -477,6 +476,92 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
   }
+
+  // ── Explore grid với hoa trang trí xung quanh ───────────────
+  Widget _buildExploreWithDeco(HomeViewModel vm) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ExploreGrid(
+          onRoomList: () => context.go(AppRoutes.roomList),
+          onAllTasks: () => context.go(AppRoutes.allTasks),
+          onCalendar: () => context.go(AppRoutes.calendar),
+          onReport:   () => context.go(AppRoutes.report),
+        ),
+        // Hoa đào góc trên phải
+        const Positioned(
+          top:   -8,
+          right: -6,
+          child: _TetFlower(size: 28, color: Color(0xFFFFB6C1), rotation: 0.3),
+        ),
+        // Hoa mai góc dưới trái
+        const Positioned(
+          bottom: -6,
+          left:   -4,
+          child: _TetFlower(size: 22, color: Color(0xFFFFD700), rotation: -0.5),
+        ),
+        // Hoa đào nhỏ giữa-phải
+        const Positioned(
+          top:   80,
+          right: -8,
+          child: _TetFlower(size: 18, color: Color(0xFFFF9BB5), rotation: 1.1),
+        ),
+      ],
+    );
+  }
+
+  // ── Tips nhỏ cuối trang ──────────────────────────────────────
+  Widget _buildTetTipsRow() {
+    final primary = Theme.of(context).colorScheme.primary;
+    final tips = [
+      ('🌸', 'Dọn từ\ntrên xuống'),
+      ('🌿', 'Thông thoáng\ncửa sổ'),
+      ('✨', 'Bắt đầu\ntừ phòng khách'),
+    ];
+    return Row(
+      children: tips.map((tip) {
+        return Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  primary.withValues(alpha: 0.06),
+                  primary.withValues(alpha: 0.02),
+                ],
+                begin: Alignment.topLeft,
+                end:   Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+              border: Border.all(
+                color: primary.withValues(alpha: 0.12),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(tip.$1, style: const TextStyle(fontSize: 20)),
+                const SizedBox(height: 6),
+                Text(
+                  tip.$2,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color:     context.isDark ? AppColors.grey400 : AppColors.grey600,
+                    height:    1.4,
+                    fontSize:  10,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
 }
 
 // ── Mini lantern widget ───────────────────────────────────────────
@@ -576,4 +661,70 @@ class _LanternPainter extends CustomPainter {
   @override
   bool shouldRepaint(_LanternPainter old) =>
       old.color != color || old.scale != scale;
+}
+
+
+// ── Hoa tết trang trí tĩnh ────────────────────────────────────────
+class _TetFlower extends StatelessWidget {
+  final double size;
+  final Color  color;
+  final double rotation;
+
+  const _TetFlower({
+    required this.size,
+    required this.color,
+    required this.rotation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: rotation,
+      child: CustomPaint(
+        size: Size(size, size),
+        painter: _FlowerPainter(color: color),
+      ),
+    );
+  }
+}
+
+class _FlowerPainter extends CustomPainter {
+  final Color color;
+  const _FlowerPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color  = color.withValues(alpha: 0.75)
+      ..style  = PaintingStyle.fill;
+    final cx = size.width  / 2;
+    final cy = size.height / 2;
+    final r  = size.width  * 0.38;
+
+    // 5 cánh hoa
+    for (int i = 0; i < 5; i++) {
+      final angle = i * math.pi * 2 / 5 - math.pi / 2;
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(angle);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(0, -r),
+          width:  r * 0.65,
+          height: r,
+        ),
+        paint,
+      );
+      canvas.restore();
+    }
+    // Nhụy
+    canvas.drawCircle(
+      Offset(cx, cy),
+      size.width * 0.1,
+      Paint()..color = Colors.white.withValues(alpha: 0.9),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_FlowerPainter old) => old.color != color;
 }

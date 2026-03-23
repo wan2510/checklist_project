@@ -8,6 +8,7 @@ import '../../../domain/entities/task.dart';
 import '../../../domain/usecases/task/add_task_usecase.dart';
 import '../../../domain/usecases/task/delete_task_usecase.dart';
 import '../../../domain/usecases/task/update_task_usecase.dart';
+import '../../../core/utils/notification_utils.dart';
 
 class TaskDetailViewModel extends ChangeNotifier {
   final AddTaskUseCase    _addTask;
@@ -177,6 +178,28 @@ class TaskDetailViewModel extends ChangeNotifier {
         await _addTask(task);
       }
 
+      // ── Schedule / cancel notification ───────────────────
+      // Dùng id cố định: nếu edit mode dùng id task, nếu thêm mới dùng title+deadline hash
+      // Phải lấy id SAU KHI _addTask/_updateTask đã chạy (task đã có id)
+      final notifId = (_originalTask?.id ?? _title + _deadline.toString())
+          .hashCode.abs();
+
+      if (_isReminderEnabled && _reminderTime != null) {
+        final reminder = _reminderTime!;
+        // Nếu reminderTime đã qua hôm nay, đặt lại vào ngày mai cùng giờ
+        final effectiveReminder = reminder.isBefore(DateTime.now())
+            ? reminder.add(const Duration(days: 1))
+            : reminder;
+
+        await NotificationUtils.scheduleTaskReminder(
+          id:          notifId,
+          taskName:    _title.trim(),
+          reminderTime: effectiveReminder,
+        );
+      } else {
+        await NotificationUtils.cancelReminder(notifId);
+      }
+
       _isSaved = true;
       notifyListeners();
       return true;
@@ -203,7 +226,10 @@ class TaskDetailViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final notifId = (_originalTask!.id + _deadline.toString())
+          .hashCode.abs();
       await _deleteTask(_originalTask!.id);
+      await NotificationUtils.cancelReminder(notifId);
       return true;
     } catch (e) {
       _error = e.toString();

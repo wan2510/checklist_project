@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -32,7 +33,15 @@ class NotificationUtils {
     final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
     _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
+    // Xin quyền hiển thị notification (Android 13+)
     await androidPlugin?.requestNotificationsPermission();
+
+    // Nếu từ chối, app sẽ tự dùng inexact alarm làm fallback
+    try {
+      await androidPlugin?.requestExactAlarmsPermission();
+    } catch (_) {
+      // Một số phiên bản cũ của plugin không có method này — bỏ qua
+    }
   }
 
   // ── Lên lịch nhắc nhở cho một task ───────────────────────────
@@ -41,9 +50,17 @@ class NotificationUtils {
     required String   taskName,
     required DateTime reminderTime,
   }) async {
+    // Guard: không schedule nếu thời gian đã qua
+    if (reminderTime.isBefore(DateTime.now())) {
+      debugPrint('[Notification] Skipped: reminderTime is in the past ($reminderTime)');
+      return;
+    }
+
     final tz.Location vnLocation = tz.getLocation('Asia/Ho_Chi_Minh');
     final tz.TZDateTime scheduledTime =
     tz.TZDateTime.from(reminderTime, vnLocation);
+
+    debugPrint('[Notification] Scheduling "$taskName" at $reminderTime (id=$id)');
 
     const AndroidNotificationDetails androidDetails =
     AndroidNotificationDetails(
@@ -62,16 +79,32 @@ class NotificationUtils {
       android: androidDetails,
     );
 
-    await _plugin.zonedSchedule(
-      id,
-      '⏰ Nhắc nhở: $taskName',
-      'Đừng quên hoàn thành công việc này để đón Tết!',
-      scheduledTime,
-      details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-      UILocalNotificationDateInterpretation.absoluteTime,
-    );
+    try {
+      // Thử exact alarm trước (cần quyền SCHEDULE_EXACT_ALARM trên Android 12+)
+      await _plugin.zonedSchedule(
+        id,
+        '⏰ Nhắc nhở: $taskName',
+        'Đừng quên hoàn thành công việc này để đón Tết!',
+        scheduledTime,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (_) {
+      // Fallback: inexact alarm — không cần quyền đặc biệt
+      // Thông báo có thể trễ vài phút nhưng vẫn hoạt động
+      await _plugin.zonedSchedule(
+        id,
+        '⏰ Nhắc nhở: $taskName',
+        'Đừng quên hoàn thành công việc này để đón Tết!',
+        scheduledTime,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    }
   }
 
   // ── Hủy một notification ──────────────────────────────────────

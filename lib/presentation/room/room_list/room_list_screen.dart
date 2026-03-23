@@ -27,6 +27,8 @@ class RoomListScreen extends StatefulWidget {
 
 class _RoomListScreenState extends State<RoomListScreen> {
   final _searchController = TextEditingController();
+  final _searchFocus      = FocusNode();
+  bool  _isSearchVisible  = false;
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _RoomListScreenState extends State<RoomListScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -50,7 +53,7 @@ class _RoomListScreenState extends State<RoomListScreen> {
         builder: (context, vm, _) {
           return Scaffold(
             backgroundColor:          context.bgColor,
-            resizeToAvoidBottomInset: false,
+            resizeToAvoidBottomInset: false, // FIX: IME tiếng Việt
             body:            _buildBody(vm),
             floatingActionButton: FabAddButton(
               onPressed: () => AddTaskBottomSheet.show(
@@ -93,8 +96,25 @@ class _RoomListScreenState extends State<RoomListScreen> {
       ),
       actions: [
         IconButton(
-          icon: Icon(Icons.search_rounded, color: context.textPrimary),
-          onPressed: () {},
+          icon: Icon(
+            _isSearchVisible ? Icons.search_off_rounded : Icons.search_rounded,
+            color: context.textPrimary,
+          ),
+          onPressed: () {
+            setState(() => _isSearchVisible = !_isSearchVisible);
+            if (_isSearchVisible) {
+              // Focus vào ô tìm kiếm khi mở
+              Future.delayed(
+                const Duration(milliseconds: 100),
+                    () => _searchFocus.requestFocus(),
+              );
+            } else {
+              // Xóa search khi đóng
+              _searchController.clear();
+              vm.onSearch('');
+              _searchFocus.unfocus();
+            }
+          },
         ),
         IconButton(
           icon: Icon(Icons.settings_outlined, color: context.textPrimary),
@@ -118,8 +138,17 @@ class _RoomListScreenState extends State<RoomListScreen> {
             padding: const EdgeInsets.all(AppDimensions.screenPaddingH),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildSearchBar(vm),
-                const SizedBox(height: AppDimensions.spaceLG),
+                // Hiện/ẩn search bar với animation
+                AnimatedCrossFade(
+                  firstChild:   _buildSearchBar(vm),
+                  secondChild:  const SizedBox(width: double.infinity, height: 0),
+                  crossFadeState: _isSearchVisible
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  duration: const Duration(milliseconds: 200),
+                ),
+                if (_isSearchVisible)
+                  const SizedBox(height: AppDimensions.spaceLG),
                 _buildZoneHeader(vm),
                 const SizedBox(height: AppDimensions.spaceLG),
 
@@ -150,6 +179,7 @@ class _RoomListScreenState extends State<RoomListScreen> {
   Widget _buildSearchBar(RoomListViewModel vm) {
     return TextField(
       controller: _searchController,
+      focusNode:  _searchFocus,
       onChanged:  vm.onSearch,
       style: AppTextStyles.bodyMedium.copyWith(color: context.textPrimary),
       decoration: InputDecoration(

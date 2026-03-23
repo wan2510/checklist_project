@@ -408,7 +408,41 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
+  // TimePicker cho giờ nhắc
+  Future<void> _pickReminderTime() async {
+    final current = _reminderTime
+        ?? _deadline.subtract(const Duration(hours: 1));
+    final picked = await showTimePicker(
+      context:     context,
+      initialTime: TimeOfDay(hour: current.hour, minute: current.minute),
+      helpText:    'Chọn giờ nhắc nhở',
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: Theme.of(ctx).colorScheme.copyWith(
+            primary: Theme.of(ctx).colorScheme.primary,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null && mounted) {
+      // Dùng ngày hôm nay (hoặc deadline nếu còn trong tương lai) + giờ user chọn
+      final base = _deadline.isAfter(DateTime.now()) ? _deadline : DateTime.now();
+      setState(() {
+        _reminderTime = DateTime(
+          base.year, base.month, base.day,
+          picked.hour, picked.minute,
+        );
+      });
+    }
+  }
+
   Widget _buildReminderRow(Color primary) {
+    final timeText = (_isReminderEnabled && _reminderTime != null)
+        ? '${_reminderTime!.hour.toString().padLeft(2, "0")}:'
+        '${_reminderTime!.minute.toString().padLeft(2, "0")}'
+        : null;
+
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spaceLG),
       decoration: BoxDecoration(
@@ -427,23 +461,52 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     color: context.textPrimary)),
             Text(AppStrings.taskReminderHint,
                 style: AppTextStyles.bodySmall),
-            if (_isReminderEnabled && _reminderTime != null)
-              Text(
-                '${_reminderTime!.hour.toString().padLeft(2,'0')}:'
-                    '${_reminderTime!.minute.toString().padLeft(2,'0')}',
-                style: AppTextStyles.labelMedium.copyWith(color: primary),
+            // Pill giờ nhắc — bấm vào để đổi giờ
+            if (timeText != null)
+              GestureDetector(
+                onTap: _pickReminderTime,
+                child: Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color:        primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time_rounded,
+                          size: 12, color: primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        timeText,
+                        style: AppTextStyles.labelMedium.copyWith(
+                            color: primary),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.edit_rounded,
+                          size: 10,
+                          color: primary.withValues(alpha: 0.7)),
+                    ],
+                  ),
+                ),
               ),
           ],
         )),
         Switch(
           value:     _isReminderEnabled,
-          onChanged: (v) => setState(() {
-            _isReminderEnabled = v;
-            if (v && _reminderTime == null) {
-              _reminderTime = _deadline.subtract(
-                  const Duration(hours: 1));
-            }
-          }),
+          onChanged: (v) async {
+            setState(() {
+              _isReminderEnabled = v;
+              if (v && _reminderTime == null) {
+                _reminderTime = _deadline.subtract(
+                    const Duration(hours: 1));
+              }
+            });
+            // Mở TimePicker ngay khi bật để chọn giờ ngay lập tức
+            if (v) await _pickReminderTime();
+          },
         ),
       ]),
     );
