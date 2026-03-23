@@ -27,25 +27,49 @@ class _SettingsScreenState extends State<SettingsScreen>
   // ── Theme reveal animation ────────────────────────────────────
   late final AnimationController _revealCtrl;
   late final Animation<double>   _revealAnim;
-  bool       _isAnimating = false;
-  bool       _revealDark  = false; // hướng: true=tối đi xuống, false=sáng đi lên
-  ThemeData? _targetTheme;         // theme đích để render layer trên
+  bool       _isAnimating       = false;
+  bool       _revealDark        = false;
+  bool?      _optimisticDark;            // FIX 1: giá trị switch ngay lập tức
+  ThemeData? _targetTheme;               // theme đích  (Layer 2)
+  ThemeData? _frozenTheme;               // theme CŨ bị đóng băng (Layer 1)
 
   void _handleDarkModeToggle(bool newValue) {
-    final vm = context.read<SettingsViewModel>();
+    final vm          = context.read<SettingsViewModel>();
+    final frozenTheme = Theme.of(context);
     final targetTheme = newValue
         ? AppTheme.darkTheme(vm.themeColor)
         : AppTheme.lightTheme(vm.themeColor);
 
     setState(() {
-      _isAnimating = true;
-      _revealDark  = newValue;
-      _targetTheme = targetTheme;
+      _isAnimating    = true;
+      _revealDark     = newValue;
+      _targetTheme    = targetTheme;
+      _frozenTheme    = frozenTheme;
+      // FIX 1: Bật switch ngay lập tức — không đợi animation xong
+      _optimisticDark = newValue;
     });
 
     _revealCtrl.forward(from: 0).then((_) {
-      vm.setDarkMode(newValue);           // đổi theme thật
-      setState(() => _isAnimating = false);
+      // progress = 1.0 → Layer 2 che toàn màn hình → gọi setDarkMode
+      vm.setDarkMode(newValue);
+
+      // Layer 2 đang ở progress=1.0 → che toàn màn hình
+      // Đợi scaffold thật paint xong với theme mới rồi xóa overlay tức thì
+      // (không dùng AnimatedOpacity — nó tạo trạng thái trung gian gây flash)
+      WidgetsBinding.instance.addPostFrameCallback((_) {   // frame N+1
+        WidgetsBinding.instance.addPostFrameCallback((_) { // frame N+2: scaffold paint
+          WidgetsBinding.instance.addPostFrameCallback((_) { // frame N+3: xóa an toàn
+            if (!mounted) return;
+            setState(() {
+              _isAnimating    = false;
+              _optimisticDark = null;
+              _frozenTheme    = null;
+              _targetTheme    = null;
+            });
+            _revealCtrl.reset();
+          });
+        });
+      });
     });
   }
 
@@ -122,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     super.initState();
     _revealCtrl = AnimationController(
       vsync:    this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 700),
     );
     _revealAnim = CurvedAnimation(
       parent: _revealCtrl,
@@ -145,25 +169,27 @@ class _SettingsScreenState extends State<SettingsScreen>
       value: widget.viewModel,
       child: Consumer<SettingsViewModel>(
         builder: (_, vm, __) {
-          // Scaffold đầy đủ với theme hiện tại
-          final currentScaffold = Scaffold(
-            backgroundColor: context.bgColor,
-            body: _buildBody(vm),
-          );
-
           // Không animate → render bình thường
-          if (!_isAnimating || _targetTheme == null) {
-            return currentScaffold;
+          if (!_isAnimating || _targetTheme == null || _frozenTheme == null) {
+            return Scaffold(
+              backgroundColor: context.bgColor,
+              body: _buildBody(vm),
+            );
           }
 
           // ── Đang animate: 2 layer Scaffold chồng nhau ────────
-          // Layer 1: TOÀN BỘ Scaffold với theme hiện tại (đứng yên)
-          // Layer 2: TOÀN BỘ Scaffold với theme mới, bị clip dần
-          // → nền ngoài, AppBar, mọi thứ đều tham gia animation
           return Stack(
             children: [
-              // Layer 1 — theme cũ, full screen, đứng yên
-              currentScaffold,
+              // Layer 1 — theme CŨ bị đóng băng (snapshot từ _frozenTheme)
+              // FIX: bọc trong Theme(_frozenTheme) nên KHÔNG bị ảnh hưởng
+              // khi MaterialApp đổi themeMode → không flash
+              Theme(
+                data: _frozenTheme!,
+                child: Scaffold(
+                  backgroundColor: _frozenTheme!.scaffoldBackgroundColor,
+                  body: _buildBody(vm, _frozenTheme),
+                ),
+              ),
 
               // Layer 2 — theme mới, clip dần theo hướng
               AnimatedBuilder(
@@ -179,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: Scaffold(
                       backgroundColor:
                       _targetTheme!.scaffoldBackgroundColor,
-                      body: _buildBody(vm),
+                      body: _buildBody(vm, _targetTheme),
                     ),
                   ),
                 ),
@@ -191,210 +217,234 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  Widget _buildBody(SettingsViewModel vm) {
-    return NestedScrollView(
-      headerSliverBuilder: (_, __) => [_buildAppBar()],
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.screenPaddingH),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: AppDimensions.spaceSM),
+  Widget _buildBody(SettingsViewModel vm, [ThemeData? themeOverride]) {
+    // FIX 2: Đọc isDark từ themeOverride (không phải context)
+    // → icon và màu sắc của từng layer đúng với theme của layer đó
+    final effectiveIsDark = themeOverride != null
+        ? themeOverride.brightness == Brightness.dark
+        : context.isDark;
+    // FIX 1: dùng _optimisticDark cho switch value nếu đang animate
+    final switchValue = _optimisticDark ?? vm.isDarkMode;
 
-            // ── User profile ───────────────────────────────────
-            SettingsSection(
-              title: 'CÀI ĐẶT NGƯỜI DÙNG',
+    return Column(
+      children: [
+        _buildPlainAppBar(themeOverride),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppDimensions.screenPaddingH),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SettingsTile(
-                  icon:        Icons.person_outline_rounded,
-                  iconColor:   AppColors.primary,
-                  iconBgColor: AppColors.primary.withValues(alpha: 0.1),
-                  title:       'Tên người dùng',
-                  subtitle:    vm.userName.isNotEmpty
-                      ? vm.userName
-                      : 'Chưa đặt tên',
-                  onTap: () => _showEditNameDialog(vm),
+                const SizedBox(height: AppDimensions.spaceSM),
+
+                // ── User profile ───────────────────────────────────
+                SettingsSection(
+                  title: 'CÀI ĐẶT NGƯỜI DÙNG',
+                  children: [
+                    SettingsTile(
+                      icon:        Icons.person_outline_rounded,
+                      iconColor:   AppColors.primary,
+                      iconBgColor: AppColors.primary.withValues(alpha: 0.1),
+                      title:       'Tên người dùng',
+                      subtitle:    vm.userName.isNotEmpty
+                          ? vm.userName
+                          : 'Chưa đặt tên',
+                      onTap: () => _showEditNameDialog(vm),
+                    ),
+                    SettingsTile(
+                      icon:        Icons.cake_outlined,
+                      iconColor:   AppColors.secondary,
+                      iconBgColor: AppColors.secondary.withValues(alpha: 0.1),
+                      title:       'Ngày sinh',
+                      subtitle:    vm.birthday.isNotEmpty
+                          ? vm.birthday
+                          : 'Chưa cài đặt',
+                      onTap: () => _showBirthdayPicker(vm),
+                    ),
+                  ],
                 ),
-                SettingsTile(
-                  icon:        Icons.cake_outlined,
-                  iconColor:   AppColors.secondary,
-                  iconBgColor: AppColors.secondary.withValues(alpha: 0.1),
-                  title:       'Ngày sinh',
-                  subtitle:    vm.birthday.isNotEmpty
-                      ? vm.birthday
-                      : 'Chưa cài đặt',
-                  onTap: () => _showBirthdayPicker(vm),
+                const SizedBox(height: AppDimensions.spaceXXL),
+
+                // ── Notifications ──────────────────────────────────
+                SettingsSection(
+                  title: AppStrings.settingsNotification,
+                  children: [
+                    SettingsToggleTile(
+                      icon:        Icons.notifications_outlined,
+                      iconColor:   AppColors.primary,
+                      iconBgColor: AppColors.primary.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsAllowNotif,
+                      subtitle:    AppStrings.settingsAllowNotifSub,
+                      value:       vm.isNotificationOn,
+                      onChanged:   vm.setNotificationOn,
+                    ),
+                    SettingsToggleTile(
+                      icon:        Icons.alarm_outlined,
+                      iconColor:   AppColors.secondary,
+                      iconBgColor: AppColors.secondary.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsDefaultReminder,
+                      subtitle:    AppStrings.settingsDefaultReminderSub,
+                      value:       true,
+                      onChanged:   (_) => _showTimePicker(vm),
+                    ),
+                    SettingsToggleTile(
+                      icon:        Icons.volume_up_outlined,
+                      iconColor:   AppColors.accent,
+                      iconBgColor: AppColors.accent.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsSound,
+                      subtitle:    AppStrings.settingsSoundSub,
+                      value:       vm.isSoundOn,
+                      onChanged:   vm.setSoundOn,
+                    ),
+                  ],
                 ),
+                const SizedBox(height: AppDimensions.spaceXXL),
+
+                // ── UI ─────────────────────────────────────────────
+                SettingsSection(
+                  title: AppStrings.settingsUI,
+                  children: [
+                    SettingsToggleTile(
+                      icon:        Icons.dark_mode_outlined,
+                      // FIX 2: màu icon theo theme của layer đang render
+                      iconColor:   effectiveIsDark
+                          ? AppColors.white
+                          : AppColors.grey700,
+                      iconBgColor: effectiveIsDark
+                          ? AppColors.grey700
+                          : AppColors.grey200,
+                      title:       AppStrings.settingsDarkMode,
+                      subtitle:    AppStrings.settingsDarkModeSub,
+                      // FIX 1: switch bật ngay lập tức
+                      value:       switchValue,
+                      onChanged:   _handleDarkModeToggle,
+                    ),
+                    ColorPickerRow(
+                      selected:  vm.themeColor,
+                      onChanged: vm.setThemeColor,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.spaceXXL),
+
+                // ── Data ───────────────────────────────────────────
+                SettingsSection(
+                  title: AppStrings.settingsData,
+                  children: [
+                    SettingsTile(
+                      icon:        Icons.cloud_upload_outlined,
+                      iconColor:   AppColors.statusInProgress,
+                      iconBgColor: AppColors.statusInProgress.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsBackup,
+                      subtitle:    AppStrings.settingsBackupSub,
+                      onTap:       () => _showComingSoon('Sao lưu & Phục hồi'),
+                    ),
+                    SettingsTile(
+                      icon:        Icons.file_download_outlined,
+                      iconColor:   AppColors.statusDone,
+                      iconBgColor: AppColors.statusDone.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsExport,
+                      subtitle:    AppStrings.settingsExportSub,
+                      onTap:       () => _showComingSoon('Xuất dữ liệu'),
+                    ),
+                    SettingsTile(
+                      icon:        Icons.refresh_rounded,
+                      iconColor:   AppColors.secondary,
+                      iconBgColor: AppColors.secondary.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsRefresh,
+                      subtitle:    AppStrings.settingsRefreshSub,
+                      onTap:       () => _confirmRefresh(vm),
+                    ),
+                    SettingsTile(
+                      icon:        Icons.delete_forever_outlined,
+                      iconColor:   AppColors.statusOverdue,
+                      iconBgColor: AppColors.statusOverdue.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsDeleteAll,
+                      subtitle:    AppStrings.settingsDeleteAllSub,
+                      isDanger:    true,
+                      onTap:       () => _confirmDeleteAll(vm),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.spaceXXL),
+
+                // ── About ──────────────────────────────────────────
+                SettingsSection(
+                  title: AppStrings.settingsAbout,
+                  children: [
+                    SettingsTile(
+                      icon:        Icons.menu_book_outlined,
+                      iconColor:   AppColors.accent,
+                      iconBgColor: AppColors.accent.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsGuide,
+                      subtitle:    AppStrings.settingsGuideSub,
+                      onTap:       () => _showComingSoon('Hướng dẫn sử dụng'),
+                    ),
+                    SettingsTile(
+                      icon:        Icons.chat_bubble_outline_rounded,
+                      iconColor:   AppColors.primary,
+                      iconBgColor: AppColors.primary.withValues(alpha: 0.1),
+                      title:       AppStrings.settingsFeedback,
+                      subtitle:    AppStrings.settingsFeedbackSub,
+                      onTap:       () => _showComingSoon('Liên hệ & Góp ý'),
+                    ),
+                    SettingsTile(
+                      icon:        Icons.info_outline_rounded,
+                      iconColor:   AppColors.grey600,
+                      iconBgColor: context.isDark
+                          ? AppColors.grey700
+                          : AppColors.grey200,                     // ✅
+                      title:       AppStrings.settingsVersion,
+                      subtitle:    null,
+                      trailing:    _buildVersionBadge(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.spaceXXL),
+
+                _buildFooter(),
+                const SizedBox(height: AppDimensions.space80),
               ],
             ),
-            const SizedBox(height: AppDimensions.spaceXXL),
-
-            // ── Notifications ──────────────────────────────────
-            SettingsSection(
-              title: AppStrings.settingsNotification,
-              children: [
-                SettingsToggleTile(
-                  icon:        Icons.notifications_outlined,
-                  iconColor:   AppColors.primary,
-                  iconBgColor: AppColors.primary.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsAllowNotif,
-                  subtitle:    AppStrings.settingsAllowNotifSub,
-                  value:       vm.isNotificationOn,
-                  onChanged:   vm.setNotificationOn,
-                ),
-                SettingsToggleTile(
-                  icon:        Icons.alarm_outlined,
-                  iconColor:   AppColors.secondary,
-                  iconBgColor: AppColors.secondary.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsDefaultReminder,
-                  subtitle:    AppStrings.settingsDefaultReminderSub,
-                  value:       true,
-                  onChanged:   (_) => _showTimePicker(vm),
-                ),
-                SettingsToggleTile(
-                  icon:        Icons.volume_up_outlined,
-                  iconColor:   AppColors.accent,
-                  iconBgColor: AppColors.accent.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsSound,
-                  subtitle:    AppStrings.settingsSoundSub,
-                  value:       vm.isSoundOn,
-                  onChanged:   vm.setSoundOn,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.spaceXXL),
-
-            // ── UI ─────────────────────────────────────────────
-            SettingsSection(
-              title: AppStrings.settingsUI,
-              children: [
-                SettingsToggleTile(
-                  icon:        Icons.dark_mode_outlined,
-                  iconColor:   context.isDark
-                      ? AppColors.white
-                      : AppColors.grey700,                     // ✅
-                  iconBgColor: context.isDark
-                      ? AppColors.grey700
-                      : AppColors.grey200,                     // ✅
-                  title:       AppStrings.settingsDarkMode,
-                  subtitle:    AppStrings.settingsDarkModeSub,
-                  value:       vm.isDarkMode,
-                  onChanged:   _handleDarkModeToggle,
-                ),
-                ColorPickerRow(
-                  selected:  vm.themeColor,
-                  onChanged: vm.setThemeColor,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.spaceXXL),
-
-            // ── Data ───────────────────────────────────────────
-            SettingsSection(
-              title: AppStrings.settingsData,
-              children: [
-                SettingsTile(
-                  icon:        Icons.cloud_upload_outlined,
-                  iconColor:   AppColors.statusInProgress,
-                  iconBgColor: AppColors.statusInProgress.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsBackup,
-                  subtitle:    AppStrings.settingsBackupSub,
-                  onTap:       () => _showComingSoon('Sao lưu & Phục hồi'),
-                ),
-                SettingsTile(
-                  icon:        Icons.file_download_outlined,
-                  iconColor:   AppColors.statusDone,
-                  iconBgColor: AppColors.statusDone.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsExport,
-                  subtitle:    AppStrings.settingsExportSub,
-                  onTap:       () => _showComingSoon('Xuất dữ liệu'),
-                ),
-                SettingsTile(
-                  icon:        Icons.refresh_rounded,
-                  iconColor:   AppColors.secondary,
-                  iconBgColor: AppColors.secondary.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsRefresh,
-                  subtitle:    AppStrings.settingsRefreshSub,
-                  onTap:       () => _confirmRefresh(vm),
-                ),
-                SettingsTile(
-                  icon:        Icons.delete_forever_outlined,
-                  iconColor:   AppColors.statusOverdue,
-                  iconBgColor: AppColors.statusOverdue.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsDeleteAll,
-                  subtitle:    AppStrings.settingsDeleteAllSub,
-                  isDanger:    true,
-                  onTap:       () => _confirmDeleteAll(vm),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.spaceXXL),
-
-            // ── About ──────────────────────────────────────────
-            SettingsSection(
-              title: AppStrings.settingsAbout,
-              children: [
-                SettingsTile(
-                  icon:        Icons.menu_book_outlined,
-                  iconColor:   AppColors.accent,
-                  iconBgColor: AppColors.accent.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsGuide,
-                  subtitle:    AppStrings.settingsGuideSub,
-                  onTap:       () => _showComingSoon('Hướng dẫn sử dụng'),
-                ),
-                SettingsTile(
-                  icon:        Icons.chat_bubble_outline_rounded,
-                  iconColor:   AppColors.primary,
-                  iconBgColor: AppColors.primary.withValues(alpha: 0.1),
-                  title:       AppStrings.settingsFeedback,
-                  subtitle:    AppStrings.settingsFeedbackSub,
-                  onTap:       () => _showComingSoon('Liên hệ & Góp ý'),
-                ),
-                SettingsTile(
-                  icon:        Icons.info_outline_rounded,
-                  iconColor:   AppColors.grey600,
-                  iconBgColor: context.isDark
-                      ? AppColors.grey700
-                      : AppColors.grey200,                     // ✅
-                  title:       AppStrings.settingsVersion,
-                  subtitle:    null,
-                  trailing:    _buildVersionBadge(),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.spaceXXL),
-
-            _buildFooter(),
-            const SizedBox(height: AppDimensions.space80),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
   // ── AppBar ────────────────────────────────────────────────────
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      pinned:          true,
-      backgroundColor: context.surfaceColor,                   // ✅
-      elevation:       0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          color: context.textPrimary,                          // ✅
+  Widget _buildPlainAppBar([ThemeData? themeOverride]) {
+    final theme        = themeOverride ?? Theme.of(context);
+    final isDark       = theme.brightness == Brightness.dark;
+    final surfaceColor = theme.scaffoldBackgroundColor;
+    final textColor    = theme.appBarTheme.foregroundColor
+        ?? (isDark ? Colors.white : const Color(0xFF1A1A1A));
+    final dividerColor = theme.dividerColor;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Safe area top
+        SizedBox(height: MediaQuery.of(context).padding.top),
+        Container(
+          color: surfaceColor,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back_ios_new_rounded,
+                    color: textColor, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              Text(
+                AppStrings.settingsTitle,
+                style: AppTextStyles.headlineSmall.copyWith(color: textColor),
+              ),
+            ],
+          ),
         ),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      title: Text(
-        AppStrings.settingsTitle,
-        style: AppTextStyles.headlineSmall.copyWith(
-          color: context.textPrimary,                          // ✅
-        ),
-      ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: context.dividerColor), // ✅
-      ),
+        Container(height: 1, color: dividerColor),
+      ],
     );
   }
 

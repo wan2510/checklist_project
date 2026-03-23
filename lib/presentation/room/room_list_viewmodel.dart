@@ -57,7 +57,6 @@ class RoomListViewModel extends ChangeNotifier {
   }
 
   // ── Search ───────────────────────────────────────────────────
-  // FIX: debounce 350ms tránh IME tiếng Việt bị ngắt
   void onSearch(String query) {
     _searchQuery = query;
     _searchDebounce?.cancel();

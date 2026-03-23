@@ -187,7 +187,7 @@ class AppStrings {
   static const String roomProgress      = 'việc hoàn thành';
   static const String updateLatest      = 'Cập nhật mới nhất';
   static const String roomsZone         = 'Khu vực dọn dẹp';
-  static const String roomsUntilTet     = 'Tết 2026 đang đến rất gần!';
+  static const String roomsUntilTet     = 'Tết 2027 đang đến rất gần!';
   static const String overallSummary    = 'Tình trạng tổng thể';
 
   // ── Quote / Inspiration ──────────────────────────────────────
